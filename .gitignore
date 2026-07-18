@@ -1,0 +1,26 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+.streamlit/
+.coverage
+htmlcov/
+dist/
+build/
+
+# Generated exports and large engineering artifacts
+exports/*
+!exports/.gitkeep
+*.f3d
+*.f3z
+*.zip
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
