@@ -6,21 +6,21 @@ from .states import SystemState
 
 
 INSTRUCTIONS = {
-    SystemState.STANDBY: "Wake the demonstrator to begin.",
-    SystemState.WAKE_UP_SELF_TEST: "Run the simulated self-test.",
-    SystemState.VEHICLE_CONNECTION: "Connect the simulated vehicle.",
-    SystemState.CASSETTE_SELECTION: "Select one dry Ready cassette.",
-    SystemState.WATER_ACTIVATION: "Confirm simulated water addition.",
-    SystemState.PRIMING: "Prime the simulated fluid and ventilation paths.",
-    SystemState.PRE_CHARGE: "Complete pre-charge, then start power transfer.",
-    SystemState.POWER_TRANSFER: "Energy transfer is simulated. Stop when complete.",
-    SystemState.DERATING: "Power is derated; monitor or stop the event.",
-    SystemState.RAMP_DOWN: "Advance the controlled shutdown sequence.",
-    SystemState.PURGE_COOLDOWN: "Complete purge/cooldown before disconnecting.",
-    SystemState.READY: "A further rescue event is available.",
-    SystemState.SERVICE_REQUIRED: "Three events are complete; simulated service is required.",
-    SystemState.FAULT_LOCKED: "Fault is latched. Reset the demonstrator.",
-    SystemState.EMERGENCY_SHUTDOWN: "Emergency shutdown active; advance to the locked state.",
+    SystemState.STANDBY: "הפעל את המערכת כדי להתחיל.",
+    SystemState.WAKE_UP_SELF_TEST: "בצע בדיקה אוטומטית.",
+    SystemState.VEHICLE_CONNECTION: "חבר את המערכת לרכב.",
+    SystemState.CASSETTE_SELECTION: "בחר מחסנית זמינה.",
+    SystemState.WATER_ACTIVATION: "הוסף מים ואשר.",
+    SystemState.PRIMING: "הכן את נתיבי הזרימה והאוורור.",
+    SystemState.PRE_CHARGE: "בצע Pre-Charge והתחל העברת אנרגיה.",
+    SystemState.POWER_TRANSFER: "העברת האנרגיה פעילה.",
+    SystemState.DERATING: "ההספק הופחת להגנת המערכת.",
+    SystemState.RAMP_DOWN: "המשך לכיבוי מבוקר.",
+    SystemState.PURGE_COOLDOWN: "השלם אוורור וקירור לפני ניתוק.",
+    SystemState.READY: "ניתן להתחיל אירוע חילוץ נוסף.",
+    SystemState.SERVICE_REQUIRED: "שלושה אירועים הושלמו; נדרש שירות.",
+    SystemState.FAULT_LOCKED: "התקלה נעולה; יש לאפס את ההדגמה.",
+    SystemState.EMERGENCY_SHUTDOWN: "עצירת חירום פעילה.",
 }
 
 
@@ -28,4 +28,3 @@ INSTRUCTIONS = {
 class HMIManager:
     def instruction_for(self, state: SystemState) -> str:
         return INSTRUCTIONS[state]
-
