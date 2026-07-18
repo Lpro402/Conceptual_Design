@@ -1,0 +1,13 @@
+{
+  "name": "Pump failure during transfer",
+  "disclaimer": "Academic simulation only; flow and timing are placeholders.",
+  "start_from": "POWER_TRANSFER",
+  "fault": "PUMP_FAILURE",
+  "expected_state": "EMERGENCY_SHUTDOWN",
+  "expected_outputs": {
+    "pump_on": false,
+    "converter_enabled": false,
+    "water_valve_open": false
+  }
+}
+

@@ -1,0 +1,14 @@
+{
+  "name": "Overtemperature safety override",
+  "disclaimer": "Academic simulation only; threshold is a placeholder.",
+  "start_from": "POWER_TRANSFER",
+  "fault": "OVERTEMPERATURE",
+  "expected_state": "EMERGENCY_SHUTDOWN",
+  "expected_outputs": {
+    "converter_enabled": false,
+    "input_contactor_closed": false,
+    "output_contactor_closed": false,
+    "water_valve_open": false
+  }
+}
+

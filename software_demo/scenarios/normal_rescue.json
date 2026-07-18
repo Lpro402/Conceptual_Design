@@ -1,0 +1,19 @@
+{
+  "name": "Normal rescue event",
+  "disclaimer": "Academic simulation only; all values are placeholders.",
+  "actions": [
+    "wake_up",
+    "run_self_test",
+    "connect_vehicle",
+    "select_cassette",
+    "add_water",
+    "prime",
+    "precharge",
+    "start_power_transfer",
+    "stop",
+    "advance_shutdown",
+    "advance_shutdown"
+  ],
+  "expected_final_state": "READY"
+}
+

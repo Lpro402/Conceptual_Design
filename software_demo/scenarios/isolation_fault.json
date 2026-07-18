@@ -1,0 +1,8 @@
+{
+  "name": "Isolation fault",
+  "disclaimer": "Academic simulation only; no real IMD or HV hardware exists.",
+  "fault": "ISOLATION_FAULT",
+  "expected_state": "EMERGENCY_SHUTDOWN",
+  "expected_fault_latched": true
+}
+
