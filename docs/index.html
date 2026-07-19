@@ -23,6 +23,7 @@
 
       <nav class="view-tabs" aria-label="System views">
         <button class="view-tab is-active" data-view="mission">Operation</button>
+        <button class="view-tab" data-view="lcd">LCD Display</button>
         <button class="view-tab" data-view="diagnostics">Diagnostics</button>
         <button class="view-tab" data-view="service">Service</button>
       </nav>
@@ -121,6 +122,89 @@
           </div>
           <div class="cassette-grid" id="cassette-grid"></div>
         </section>
+      </section>
+
+      <section class="view-panel" id="view-lcd" aria-labelledby="lcd-heading">
+        <div class="page-heading lcd-page-heading">
+          <div>
+            <span class="panel-eyebrow">PHYSICAL HMI CONCEPT</span>
+            <h1 id="lcd-heading">Integrated LCD Operator Display</h1>
+          </div>
+          <span class="section-note">Compact touch interface for the Metalyte enclosure</span>
+        </div>
+
+        <section class="lcd-device" aria-label="Metalyte physical LCD interface">
+          <span class="lcd-screw lcd-screw--tl" aria-hidden="true"></span>
+          <span class="lcd-screw lcd-screw--tr" aria-hidden="true"></span>
+          <span class="lcd-screw lcd-screw--bl" aria-hidden="true"></span>
+          <span class="lcd-screw lcd-screw--br" aria-hidden="true"></span>
+
+          <div class="lcd-screen" id="lcd-screen">
+            <header class="lcd-topbar">
+              <div class="lcd-brand"><span class="lcd-brand-icon">⚡</span><span><strong>METALYTE</strong><small>PRO · MPRO</small></span></div>
+              <div class="lcd-clock"><strong id="lcd-clock">00:00</strong><small>LOCAL TIME</small></div>
+              <div class="lcd-connection" id="lcd-connection"><span></span><strong>EV LINK</strong><small id="lcd-vehicle-status">DISCONNECTED</small></div>
+            </header>
+
+            <div class="lcd-alert" id="lcd-alert">
+              <span class="lcd-alert-icon">!</span>
+              <span><strong id="lcd-alert-title">SAFETY TRIP</strong><small id="lcd-alert-copy">Power path isolated</small></span>
+            </div>
+
+            <div class="lcd-main">
+              <section class="lcd-state-card">
+                <span class="lcd-label">SYSTEM MODE</span>
+                <strong id="lcd-state-title">READY</strong>
+                <p id="lcd-state-copy">System ready for a rescue event.</p>
+                <div class="lcd-step-track"><span id="lcd-progress-bar"></span></div>
+                <small id="lcd-progress-label">STEP 1 / 11</small>
+              </section>
+
+              <section class="lcd-output-card">
+                <span class="lcd-label">OUTPUT POWER</span>
+                <div class="lcd-power-value"><strong id="lcd-power">0.0</strong><span>kW</span></div>
+                <div class="lcd-energy-row"><span>ENERGY DELIVERED</span><strong><span id="lcd-energy">0.00</span> kWh</strong></div>
+                <div class="lcd-energy-track"><span id="lcd-energy-bar"></span></div>
+              </section>
+
+              <section class="lcd-vitals-card">
+                <span class="lcd-label">LIVE VITALS</span>
+                <div class="lcd-vitals-grid">
+                  <div><span>STACK</span><strong><b id="lcd-voltage">57.6</b> V</strong></div>
+                  <div><span>CURRENT</span><strong><b id="lcd-current">0.0</b> A</strong></div>
+                  <div><span>TEMP</span><strong><b id="lcd-temperature">25.0</b> °C</strong></div>
+                  <div><span>FLOW</span><strong><b id="lcd-flow">0.0</b> L/min</strong></div>
+                </div>
+              </section>
+            </div>
+
+            <div class="lcd-energy-path" id="lcd-energy-path">
+              <div data-lcd-flow="cassette"><span>Al</span><strong>CARTRIDGE</strong><small id="lcd-cartridge-state">READY</small></div>
+              <i></i>
+              <div data-lcd-flow="stack"><span>▤</span><strong>AL-AIR</strong><small id="lcd-stack-state">IDLE</small></div>
+              <i></i>
+              <div data-lcd-flow="converter"><span>⚡</span><strong>DC/DC</strong><small id="lcd-converter-state">ISOLATED</small></div>
+              <i></i>
+              <div data-lcd-flow="vehicle"><span>EV</span><strong>VEHICLE</strong><small id="lcd-ev-state">OFFLINE</small></div>
+            </div>
+
+            <div class="lcd-bottom-strip">
+              <div class="lcd-cassette-summary" id="lcd-cassette-summary"></div>
+              <div class="lcd-softkeys">
+                <button class="lcd-softkey" id="lcd-diagnostics-link"><span>◫</span>DIAGNOSTICS</button>
+                <button class="lcd-softkey lcd-softkey--primary" id="lcd-primary-action"><span>▶</span><b id="lcd-primary-label">WAKE UP</b></button>
+                <button class="lcd-softkey" id="lcd-service-link"><span>↻</span>SERVICE</button>
+              </div>
+              <button class="lcd-estop" id="lcd-emergency-action"><span>!</span>E-STOP</button>
+            </div>
+          </div>
+        </section>
+
+        <div class="lcd-explanation">
+          <article><span>01</span><div><strong>One guided action</strong><p>The center soft key always shows the next valid operator action.</p></div></article>
+          <article><span>02</span><div><strong>Immediate safety visibility</strong><p>State, EV link, alarms, power isolation, and purge status remain visible.</p></div></article>
+          <article><span>03</span><div><strong>Engineering access</strong><p>Diagnostics and service information are available without crowding the main screen.</p></div></article>
+        </div>
       </section>
 
       <section class="view-panel" id="view-diagnostics" aria-labelledby="diagnostics-heading">

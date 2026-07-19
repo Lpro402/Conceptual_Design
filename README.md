@@ -21,9 +21,15 @@ For a presentation-ready operating screen, open:
 
 **https://lpro402.github.io/Conceptual_Design/?scenario=charging**
 
-The public interface is a self-contained static demonstrator with three views:
+For the standalone physical LCD concept, open:
+
+**https://lpro402.github.io/Conceptual_Design/?scenario=charging&view=lcd**
+
+The public interface is a self-contained static demonstrator with four views:
 
 - **Operation** — a guided rescue mission with one primary action per state.
+- **LCD Display** — a compact physical-screen concept synchronized with the
+  same state machine, measurements, cartridge lifecycle, and safety override.
 - **Diagnostics** — live simulated measurements, fault injection, safety-chain
   response, actuator commands, and event logging.
 - **Service** — cartridge readiness, service capacity, and the conceptual
@@ -34,6 +40,8 @@ represent the same Tier-0 logic. The public interface is optimized for reports,
 presentations, and sharing; Streamlit remains the executable Python reference.
 
 ![Metalyte PRO-MPRO operating screen](docs/assets/metalyte_hmi_dashboard.png)
+
+![Metalyte PRO-MPRO LCD display concept](docs/assets/metalyte_lcd_display.png)
 
 The repository organization is temporary. It is not a product tree, PBS, BOM,
 ICD, or N-squared model.
@@ -109,6 +117,10 @@ Use the public link above as a clickable hyperlink in Word. The controlled
 dashboard image is available at:
 
 `https://lpro402.github.io/Conceptual_Design/assets/metalyte_hmi_dashboard.png`
+
+The standalone physical LCD image is available at:
+
+`https://lpro402.github.io/Conceptual_Design/assets/metalyte_lcd_display.png`
 
 To refresh the image after a UI change:
 

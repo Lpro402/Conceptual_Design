@@ -137,6 +137,24 @@ const CASSETTE_UI = {
   FAULTED: ["FAULTED", "Locked against further use", "is-faulted"],
 };
 
+const LCD_ACTIONS = {
+  STANDBY: "WAKE UP",
+  SELF_TEST: "RUN SELF-TEST",
+  VEHICLE_CONNECTION: "CONFIRM EV",
+  CASSETTE_SELECTION: "SELECT CARTRIDGE",
+  WATER_ACTIVATION: "CONFIRM WATER",
+  PRIMING: "START PRIMING",
+  PRE_CHARGE: "START TRANSFER",
+  POWER_TRANSFER: "STOP TRANSFER",
+  DERATING: "STOP TRANSFER",
+  RAMP_DOWN: "START PURGE",
+  PURGE_COOLDOWN: "COMPLETE EVENT",
+  READY: "NEW RESCUE",
+  SERVICE_REQUIRED: "RESET DEMO",
+  EMERGENCY_SHUTDOWN: "SECURE SYSTEM",
+  FAULT_LOCKED: "RESET DEMO",
+};
+
 const runtime = {
   state: "STANDBY",
   cassettes: ["DRY_READY", "DRY_READY", "DRY_READY"],
@@ -352,6 +370,7 @@ function injectFault(faultKey) {
 
 function safeOutputs() {
   runtime.sensors.current = 0;
+  runtime.sensors.flow = 0;
   Object.assign(runtime.actuators, {
     waterValve: false,
     pump: false,
@@ -402,6 +421,7 @@ function remainingEvents() {
 function render() {
   renderHeader();
   renderMission();
+  renderLCD();
   renderCassettes();
   renderFlow();
   renderDiagnostics();
@@ -448,6 +468,79 @@ function renderLiveValues() {
   byId("sensor-flow").textContent = runtime.sensors.flow.toFixed(1);
   byId("sensor-pressure").textContent = runtime.sensors.pressure.toFixed(2);
   byId("sensor-hydrogen").textContent = runtime.sensors.hydrogen.toFixed(2);
+  renderLCDLiveValues();
+}
+
+function renderLCDLiveValues() {
+  const power = (runtime.sensors.voltage * runtime.sensors.current) / 1000;
+  const energyPercent = Math.min(100, (runtime.energyKwh / runtime.targetEnergyKwh) * 100);
+  byId("lcd-power").textContent = power.toFixed(1);
+  byId("lcd-energy").textContent = runtime.energyKwh.toFixed(2);
+  byId("lcd-energy-bar").style.width = `${energyPercent}%`;
+  byId("lcd-voltage").textContent = runtime.sensors.voltage.toFixed(1);
+  byId("lcd-current").textContent = runtime.sensors.current.toFixed(1);
+  byId("lcd-temperature").textContent = runtime.sensors.temperature.toFixed(1);
+  byId("lcd-flow").textContent = runtime.sensors.flow.toFixed(1);
+}
+
+function renderLCD() {
+  const state = STATES[runtime.state];
+  const progress = missionProgress();
+  const stepIndex = Math.max(0, STATE_ORDER.indexOf(runtime.state));
+  const live = ["POWER_TRANSFER", "DERATING"].includes(runtime.state);
+  const faulted = Boolean(runtime.fault);
+  const selected = runtime.selectedCassette !== null;
+
+  byId("lcd-screen").classList.toggle("is-fault", faulted);
+  byId("lcd-alert").classList.toggle("is-visible", faulted);
+  byId("lcd-alert-copy").textContent = runtime.fault ? FAULTS[runtime.fault].value : "Power path isolated";
+  byId("lcd-state-title").textContent = state.title.toUpperCase();
+  byId("lcd-state-copy").textContent = state.copy;
+  byId("lcd-progress-bar").style.width = `${progress}%`;
+  byId("lcd-progress-label").textContent = faulted
+    ? "INDEPENDENT SAFETY OVERRIDE"
+    : `STEP ${Math.min(stepIndex + 1, 11)} / 11`;
+  byId("lcd-connection").classList.toggle("is-connected", runtime.vehicleConnected);
+  byId("lcd-vehicle-status").textContent = runtime.vehicleConnected ? "CONNECTED" : "DISCONNECTED";
+
+  const actionLabel = LCD_ACTIONS[runtime.state];
+  byId("lcd-primary-label").textContent = actionLabel;
+  byId("lcd-primary-action").classList.toggle("is-stop", live);
+
+  const lcdNodes = {
+    cassette: selected || runtime.completedEvents > 0,
+    stack: ["PRE_CHARGE", "POWER_TRANSFER", "DERATING", "RAMP_DOWN", "PURGE_COOLDOWN"].includes(runtime.state),
+    converter: live,
+    vehicle: runtime.vehicleConnected,
+  };
+  byId("lcd-energy-path").classList.toggle("is-live", live);
+  Object.entries(lcdNodes).forEach(([name, active]) => {
+    document.querySelector(`[data-lcd-flow="${name}"]`).classList.toggle("is-active", active);
+  });
+  byId("lcd-cartridge-state").textContent = faulted
+    ? "FAULTED"
+    : selected ? `C${runtime.selectedCassette + 1} ACTIVE` : "READY";
+  byId("lcd-stack-state").textContent = runtime.actuators.pump ? "REACTION" : "IDLE";
+  byId("lcd-converter-state").textContent = runtime.actuators.converter ? "ACTIVE" : "ISOLATED";
+  byId("lcd-ev-state").textContent = runtime.vehicleConnected ? "ONLINE" : "OFFLINE";
+
+  byId("lcd-cassette-summary").innerHTML = runtime.cassettes.map((cassetteState, index) => {
+    let cssClass = "";
+    if (cassetteState === "DRY_READY") cssClass = "is-ready";
+    if (["SELECTED", "ACTIVATING", "ACTIVE"].includes(cassetteState)) cssClass = "is-active";
+    if (cassetteState === "SPENT") cssClass = "is-spent";
+    if (cassetteState === "FAULTED") cssClass = "is-fault";
+    return `<span class="lcd-mini-cassette ${cssClass}" title="Cartridge ${index + 1}: ${cassetteState}">C${index + 1}</span>`;
+  }).join("");
+
+  renderLCDLiveValues();
+}
+
+function updateLCDClock() {
+  byId("lcd-clock").textContent = new Date().toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 function renderCassettes() {
@@ -568,9 +661,20 @@ function initializeShowcaseScenario() {
   return true;
 }
 
+function initializeRequestedView() {
+  const view = new URLSearchParams(window.location.search).get("view");
+  if (!["mission", "lcd", "diagnostics", "service"].includes(view)) return;
+  selectView(view);
+  document.body.classList.toggle("lcd-standalone", view === "lcd");
+}
+
 queryAll(".view-tab").forEach((button) => button.addEventListener("click", () => selectView(button.dataset.view)));
 byId("primary-action").addEventListener("click", handlePrimaryAction);
 byId("emergency-action").addEventListener("click", () => injectFault("E_STOP"));
+byId("lcd-primary-action").addEventListener("click", handlePrimaryAction);
+byId("lcd-emergency-action").addEventListener("click", () => injectFault("E_STOP"));
+byId("lcd-diagnostics-link").addEventListener("click", () => selectView("diagnostics"));
+byId("lcd-service-link").addEventListener("click", () => selectView("service"));
 byId("inject-fault").addEventListener("click", () => injectFault(byId("fault-select").value));
 byId("diagnostics-reset").addEventListener("click", () => resetRuntime());
 byId("clear-log").addEventListener("click", () => {
@@ -583,4 +687,7 @@ initializeFaultSelect();
 runtime.sensors = defaultSensors();
 runtime.actuators = defaultActuators();
 if (!initializeShowcaseScenario()) addLog("System ready to begin");
+updateLCDClock();
+window.setInterval(updateLCDClock, 1000);
 render();
+initializeRequestedView();

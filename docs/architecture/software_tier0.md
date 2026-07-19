@@ -46,6 +46,9 @@ Two user interfaces express this architecture without changing its scope:
 - The static English HMI in `docs/` is the public, report-ready system view.
   It provides guided operation, live presentation values, fault injection,
   safety outputs, event history, and service-readiness visualization.
+- Its LCD mode represents the proposed physical enclosure display. It exposes
+  the current mission state, one valid action, output power, energy, critical
+  measurements, cartridge status, EV connection, and a persistent E-Stop.
 - The Streamlit application in `software_demo/` is the executable Python
   engineering reference used by the automated state-machine tests.
 
