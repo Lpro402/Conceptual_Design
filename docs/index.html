@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b2447">
+  <meta name="description" content="Metalyte PRO-MPRO academic software demonstrator for emergency EV mobility restoration">
+  <title>Metalyte PRO-MPRO | System Demonstrator</title>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="Metalyte PRO home screen">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 40 40" role="img"><path d="M23.3 3 10 22h9l-2.2 15L31 16h-9.2L23.3 3Z"/></svg>
+        </span>
+        <span>
+          <strong>METALYTE PRO</strong>
+          <small>Emergency Mobility System</small>
+        </span>
+      </a>
+
+      <nav class="view-tabs" aria-label="System views">
+        <button class="view-tab is-active" data-view="mission">Operation</button>
+        <button class="view-tab" data-view="diagnostics">Diagnostics</button>
+        <button class="view-tab" data-view="service">Service</button>
+      </nav>
+
+      <div class="system-badge">
+        <span class="pulse-dot" id="header-status-dot"></span>
+        <span id="header-status">Ready</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="view-panel is-active" id="view-mission" aria-labelledby="mission-heading">
+        <div class="mission-grid">
+          <section class="status-hero status-ready" id="status-hero" aria-live="polite">
+            <div class="status-hero__content">
+              <div class="status-kicker">
+                <span class="status-light"></span>
+                <span id="status-kicker">SYSTEM STATUS</span>
+              </div>
+              <h1 id="mission-heading"><span id="state-title">Ready to Start</span></h1>
+              <p id="state-copy">The system is stored and ready for a rescue event.</p>
+              <div class="mission-progress" aria-label="Rescue mission progress">
+                <div class="mission-progress__meta">
+                  <span id="progress-label">Step 1 of 11</span>
+                  <span id="progress-percent">0%</span>
+                </div>
+                <div class="progress-track"><span id="progress-bar"></span></div>
+              </div>
+            </div>
+            <div class="energy-orbit" aria-hidden="true">
+              <svg viewBox="0 0 220 220">
+                <circle class="orbit-bg" cx="110" cy="110" r="86"/>
+                <circle class="orbit-value" id="energy-orbit" cx="110" cy="110" r="86"/>
+              </svg>
+              <div class="orbit-value-label">
+                <strong id="energy-value">0.00</strong>
+                <span>kWh DELIVERED</span>
+              </div>
+            </div>
+          </section>
+
+          <aside class="action-panel">
+            <span class="panel-eyebrow">NEXT ACTION</span>
+            <h2 id="next-action-title">Wake Up System</h2>
+            <p id="next-action-copy">One action begins the guided readiness sequence.</p>
+            <button class="primary-action" id="primary-action">
+              <span id="primary-action-label">Wake Up System</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+            </button>
+            <button class="emergency-action" id="emergency-action">
+              <span class="emergency-icon" aria-hidden="true">!</span>
+              EMERGENCY STOP
+            </button>
+          </aside>
+        </div>
+
+        <section class="quick-status" aria-label="System summary">
+          <article class="info-card">
+            <span class="info-icon info-icon--blue" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 7h10v10H7zM9 3v4m6-4v4m-6 10v4m6-4v4M3 9h4m10 0h4M3 15h4m10 0h4"/></svg></span>
+            <span><small>RESCUES REMAINING</small><strong id="remaining-events">3 of 3</strong></span>
+          </article>
+          <article class="info-card">
+            <span class="info-icon info-icon--teal" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 12h8m-2.5-3.5L17 12l-3.5 3.5M6 5h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z"/></svg></span>
+            <span><small>VEHICLE LINK</small><strong id="vehicle-status">Disconnected</strong></span>
+          </article>
+          <article class="info-card">
+            <span class="info-icon info-icon--green" id="safety-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m12 3 7 3v5c0 4.6-2.9 8-7 10-4.1-2-7-5.4-7-10V6l7-3Zm-3 9 2 2 4-4"/></svg></span>
+            <span><small>SAFETY STATUS</small><strong id="safety-status">Nominal</strong></span>
+          </article>
+          <article class="info-card">
+            <span class="info-icon info-icon--amber" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M13 2 5 14h6l-1 8 9-13h-6V2Z"/></svg></span>
+            <span><small>SIMULATED POWER</small><strong id="power-summary">0.0 kW</strong></span>
+          </article>
+        </section>
+
+        <section class="system-flow-card">
+          <div class="section-heading">
+            <div><span class="panel-eyebrow">ENERGY PATH</span><h2>System Energy Flow</h2></div>
+            <span class="live-chip" id="flow-chip"><span></span> STANDBY</span>
+          </div>
+          <div class="system-flow" id="system-flow">
+            <div class="flow-node" data-flow="cassette"><span class="flow-node__icon">Al</span><strong>Cartridge</strong><small id="flow-cassette">Waiting</small></div>
+            <span class="flow-link"><i></i></span>
+            <div class="flow-node" data-flow="stack"><span class="flow-node__icon"><svg viewBox="0 0 24 24"><path d="M6 4h12v4H6zm0 6h12v4H6zm0 6h12v4H6z"/></svg></span><strong>Al-Air Stack</strong><small id="flow-stack">Inactive</small></div>
+            <span class="flow-link"><i></i></span>
+            <div class="flow-node" data-flow="converter"><span class="flow-node__icon"><svg viewBox="0 0 24 24"><path d="m13 2-8 12h6l-1 8 9-13h-6V2Z"/></svg></span><strong>DC/DC</strong><small id="flow-converter">Isolated</small></div>
+            <span class="flow-link"><i></i></span>
+            <div class="flow-node" data-flow="vehicle"><span class="flow-node__icon"><svg viewBox="0 0 24 24"><path d="m5 15 1.5-5h11L19 15m-15 0h16v4H4zm3 4v2m10-2v2M8 7h8"/></svg></span><strong>Electric Vehicle</strong><small id="flow-vehicle">Disconnected</small></div>
+          </div>
+        </section>
+
+        <section class="cassette-section">
+          <div class="section-heading">
+            <div><span class="panel-eyebrow">CHEMICAL ENERGY STORE</span><h2>Three Rescue Cartridges</h2></div>
+            <span class="section-note">One cartridge is activated per rescue event</span>
+          </div>
+          <div class="cassette-grid" id="cassette-grid"></div>
+        </section>
+      </section>
+
+      <section class="view-panel" id="view-diagnostics" aria-labelledby="diagnostics-heading">
+        <div class="page-heading">
+          <div><span class="panel-eyebrow">ENGINEERING VIEW</span><h1 id="diagnostics-heading">Diagnostics & Fault Simulation</h1></div>
+          <button class="ghost-button" id="diagnostics-reset">Reset Demonstrator</button>
+        </div>
+
+        <div class="diagnostics-grid">
+          <section class="diagnostic-card sensor-panel">
+            <div class="section-heading compact"><div><span class="panel-eyebrow">LIVE DATA</span><h2>Simulated Measurements</h2></div><span class="live-chip is-live"><span></span> LIVE</span></div>
+            <div class="sensor-grid">
+              <article><small>STACK VOLTAGE</small><strong id="sensor-voltage">57.6</strong><span>V</span></article>
+              <article><small>STACK CURRENT</small><strong id="sensor-current">0.0</strong><span>A</span></article>
+              <article><small>TEMPERATURE</small><strong id="sensor-temperature">25.0</strong><span>°C</span></article>
+              <article><small>ELECTROLYTE FLOW</small><strong id="sensor-flow">0.0</strong><span>L/min</span></article>
+              <article><small>PRESSURE</small><strong id="sensor-pressure">1.00</strong><span>bar</span></article>
+              <article><small>HYDROGEN</small><strong id="sensor-hydrogen">0.00</strong><span>%</span></article>
+            </div>
+          </section>
+
+          <section class="diagnostic-card fault-panel">
+            <span class="panel-eyebrow">FAULT INJECTION</span>
+            <h2>Demonstrate a Safety Response</h2>
+            <p>Select a simulated fault to show how the independent safety chain overrides normal operation.</p>
+            <label for="fault-select">FAULT SCENARIO</label>
+            <select id="fault-select"></select>
+            <button class="danger-button" id="inject-fault">Inject Selected Fault</button>
+            <p class="microcopy">All values and thresholds are simulated placeholders, not validated design limits.</p>
+          </section>
+        </div>
+
+        <div class="diagnostics-grid diagnostics-grid--lower">
+          <section class="diagnostic-card">
+            <div class="section-heading compact"><div><span class="panel-eyebrow">SAFETY CHAIN</span><h2>Independent Safety Inputs</h2></div></div>
+            <div class="safety-chain" id="safety-chain"></div>
+          </section>
+          <section class="diagnostic-card">
+            <div class="section-heading compact"><div><span class="panel-eyebrow">ACTUATORS</span><h2>System Output Commands</h2></div></div>
+            <div class="actuator-list" id="actuator-list"></div>
+          </section>
+        </div>
+
+        <section class="diagnostic-card log-card">
+          <div class="section-heading compact"><div><span class="panel-eyebrow">EVENT LOG</span><h2>Chronological System Log</h2></div><button class="text-button" id="clear-log">Clear Log</button></div>
+          <ol class="event-log" id="event-log"></ol>
+        </section>
+      </section>
+
+      <section class="view-panel" id="view-service" aria-labelledby="service-heading">
+        <div class="page-heading">
+          <div><span class="panel-eyebrow">SERVICE & READINESS</span><h1 id="service-heading">Readiness, Service & Recycling</h1></div>
+          <span class="system-badge system-badge--large"><span class="pulse-dot"></span><span id="service-readiness">Ready</span></span>
+        </div>
+
+        <div class="service-layout">
+          <section class="service-score-card">
+            <div class="readiness-ring" id="readiness-ring"><strong id="readiness-score">100</strong><span>% READY</span></div>
+            <h2 id="readiness-title">System Ready</h2>
+            <p id="readiness-copy">Three cartridges are available for rescue events.</p>
+          </section>
+          <section class="service-card">
+            <span class="panel-eyebrow">SERVICE MODEL</span>
+            <h2>Closed-Loop Cartridge Service</h2>
+            <div class="service-timeline">
+              <div><span>1</span><strong>Swap</strong><small>Replace sealed cartridges</small></div><i></i>
+              <div><span>2</span><strong>Collect</strong><small>Transfer spent units to a dedicated facility</small></div><i></i>
+              <div><span>3</span><strong>Recover</strong><small>Process and recover aluminum materials</small></div><i></i>
+              <div><span>4</span><strong>Return</strong><small>Supply service-ready cartridges</small></div>
+            </div>
+          </section>
+        </div>
+
+        <section class="service-card service-details">
+          <div><span class="detail-icon">OK</span><span><strong>SELF-TEST</strong><small id="service-self-test">Not yet completed</small></span></div>
+          <div><span class="detail-icon">3×</span><span><strong>SERVICE CAPACITY</strong><small id="service-capacity">3 rescue events available</small></span></div>
+          <div><span class="detail-icon">↻</span><span><strong>RECYCLING STATUS</strong><small>No cartridges awaiting collection</small></span></div>
+        </section>
+      </section>
+    </main>
+
+    <footer>
+      <span>Metalyte PRO-MPRO · Tier-0 Concept Demonstrator</span>
+      <span>ACADEMIC SIMULATION ONLY · NO REAL HARDWARE, VEHICLE OR CCS2 CONTROL</span>
+    </footer>
+  </div>
+
+  <div class="toast-region" id="toast-region" aria-live="polite"></div>
+  <script src="assets/app.js" defer></script>
+</body>
+</html>

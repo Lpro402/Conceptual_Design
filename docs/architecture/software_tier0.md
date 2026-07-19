@@ -39,3 +39,15 @@ mission controller to complete a normal transition.
 
 All present numeric values are simulated placeholders.
 
+## Demonstration surfaces
+
+Two user interfaces express this architecture without changing its scope:
+
+- The static English HMI in `docs/` is the public, report-ready system view.
+  It provides guided operation, live presentation values, fault injection,
+  safety outputs, event history, and service-readiness visualization.
+- The Streamlit application in `software_demo/` is the executable Python
+  engineering reference used by the automated state-machine tests.
+
+Neither interface controls real hardware, implements CCS2, or makes a
+functional-safety claim.

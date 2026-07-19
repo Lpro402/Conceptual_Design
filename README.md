@@ -11,6 +11,30 @@ independent safety override, purge/cooldown, service lockout, and event logging.
 > thresholds, measurements, timings, and actuator commands are simulated
 > placeholders and must not be used to operate hardware.
 
+## Public interactive system
+
+The browser-based concept system is published at:
+
+**https://lpro402.github.io/Conceptual_Design/**
+
+For a presentation-ready operating screen, open:
+
+**https://lpro402.github.io/Conceptual_Design/?scenario=charging**
+
+The public interface is a self-contained static demonstrator with three views:
+
+- **Operation** — a guided rescue mission with one primary action per state.
+- **Diagnostics** — live simulated measurements, fault injection, safety-chain
+  response, actuator commands, and event logging.
+- **Service** — cartridge readiness, service capacity, and the conceptual
+  closed-loop replacement and recycling process.
+
+The static public interface and the Python/Streamlit engineering demonstrator
+represent the same Tier-0 logic. The public interface is optimized for reports,
+presentations, and sharing; Streamlit remains the executable Python reference.
+
+![Metalyte PRO-MPRO operating screen](docs/assets/metalyte_hmi_dashboard.png)
+
 The repository organization is temporary. It is not a product tree, PBS, BOM,
 ICD, or N-squared model.
 
@@ -65,15 +89,30 @@ The dashboard opens locally in a browser. Follow the numbered controls from
 Wake Up through power transfer, then use Stop and Advance Shutdown Step to
 observe ramp-down and purge before returning to Ready.
 
+To preview the public static interface locally:
+
+```powershell
+python -m http.server 8770 --directory docs
+```
+
+Then open `http://127.0.0.1:8770/`.
+
 ## Run tests
 
 ```powershell
 python -m pytest
 ```
 
-## Capture screenshots
+## Word-ready link and screenshot
 
-1. Start the dashboard.
+Use the public link above as a clickable hyperlink in Word. The controlled
+dashboard image is available at:
+
+`https://lpro402.github.io/Conceptual_Design/assets/metalyte_hmi_dashboard.png`
+
+To refresh the image after a UI change:
+
+1. Open the public or local static interface with `?scenario=charging`.
 2. Set the browser to a 16:9 window.
 3. Capture the system overview in `STANDBY` or `POWER_TRANSFER`.
 4. Inject a fault and capture the red safety panel and event log.
