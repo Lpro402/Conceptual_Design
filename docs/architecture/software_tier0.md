@@ -49,6 +49,11 @@ Two user interfaces express this architecture without changing its scope:
 - Its LCD mode represents the proposed physical enclosure display. It exposes
   the current mission state, one valid action, output power, energy, critical
   measurements, cartridge status, EV connection, and a persistent E-Stop.
+- Its Architecture mode is a live, report-ready representation of this Tier-0
+  model. The selected module exposes its responsibility, input contract,
+  output contract, fail-safe relationship, and direct source-code link. Module
+  activity and the macro operating phase follow the same in-browser runtime as
+  the Operation, LCD, Diagnostics, and Service views.
 - The Streamlit application in `software_demo/` is the executable Python
   engineering reference used by the automated state-machine tests.
 

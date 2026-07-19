@@ -25,11 +25,18 @@ For the standalone physical LCD concept, open:
 
 **https://lpro402.github.io/Conceptual_Design/?scenario=charging&view=lcd**
 
-The public interface is a self-contained static demonstrator with four views:
+For the live Software Tier-0 architecture, open:
+
+**https://lpro402.github.io/Conceptual_Design/?scenario=charging&view=architecture**
+
+The public interface is a self-contained static demonstrator with five views:
 
 - **Operation** — a guided rescue mission with one primary action per state.
 - **LCD Display** — a compact physical-screen concept synchronized with the
   same state machine, measurements, cartridge lifecycle, and safety override.
+- **Architecture** — an interactive Software Tier-0 model whose active modules,
+  mission phase, safety authority, contracts, and source-code links follow the
+  running simulation.
 - **Diagnostics** — live simulated measurements, fault injection, safety-chain
   response, actuator commands, and event logging.
 - **Service** — cartridge readiness, service capacity, and the conceptual
@@ -42,6 +49,8 @@ presentations, and sharing; Streamlit remains the executable Python reference.
 ![Metalyte PRO-MPRO operating screen](docs/assets/metalyte_hmi_dashboard.png)
 
 ![Metalyte PRO-MPRO LCD display concept](docs/assets/metalyte_lcd_display.png)
+
+![Metalyte PRO-MPRO Software Tier-0 architecture](docs/assets/metalyte_software_architecture.png)
 
 The repository organization is temporary. It is not a product tree, PBS, BOM,
 ICD, or N-squared model.
@@ -121,6 +130,10 @@ dashboard image is available at:
 The standalone physical LCD image is available at:
 
 `https://lpro402.github.io/Conceptual_Design/assets/metalyte_lcd_display.png`
+
+The Software Tier-0 architecture image is available at:
+
+`https://lpro402.github.io/Conceptual_Design/assets/metalyte_software_architecture.png`
 
 To refresh the image after a UI change:
 

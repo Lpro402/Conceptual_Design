@@ -155,6 +155,108 @@ const LCD_ACTIONS = {
   FAULT_LOCKED: "RESET DEMO",
 };
 
+const ARCHITECTURE_MODULES = {
+  main: {
+    code: "SW-CTRL-01",
+    title: "Main System Controller",
+    purpose: "Coordinates the deterministic rescue mission without owning the independent safety decision.",
+    responsibilities: ["Guarded mission-state transitions", "Operating-mode coordination", "Command arbitration across software managers"],
+    inputs: "hmi_cmd | ev_status | reaction_status | power_status | fluid_status | service_state | safety_state",
+    outputs: "mission_state | ev_cmd | reaction_cmd | power_cmd | fluid_cmd | log_event",
+    safety: "The safety supervisor can override the controller and force safe outputs independently.",
+    source: "https://github.com/Lpro402/Conceptual_Design/blob/main/software_demo/metalyte/controller.py",
+  },
+  hmi: {
+    code: "SW-HMI-01",
+    title: "HMI Manager",
+    purpose: "Translates machine state into one clear operator instruction and persistent safety visibility.",
+    responsibilities: ["Operator-state presentation", "Primary-action and E-Stop input", "LCD, alarm, prompt, and status rendering"],
+    inputs: "mission_state | safety_state | measurements | service_state",
+    outputs: "hmi_cmd | operator_ack | emergency_stop",
+    safety: "The E-Stop request is routed directly to the safety path; the HMI cannot clear a latched fault.",
+    source: "https://github.com/Lpro402/Conceptual_Design/blob/main/software_demo/metalyte/hmi.py",
+  },
+  safety: {
+    code: "SW-SAFE-01",
+    title: "Independent Safety Supervisor",
+    purpose: "Evaluates critical simulated conditions and owns the highest-priority safe-state authority.",
+    responsibilities: ["Fault evaluation and latching", "Derating and shutdown requests", "Emergency trip and direct output override"],
+    inputs: "E-Stop | HVIL | isolation | temperature | H2 | leak | pressure | flow | contactor_feedback",
+    outputs: "safety_state | gate_disable | contactor_open | water_stop | purge_hold",
+    safety: "This module can bypass normal mission sequencing and directly force simulated actuators safe.",
+    source: "https://github.com/Lpro402/Conceptual_Design/blob/main/software_demo/metalyte/safety.py",
+  },
+  ev: {
+    code: "SW-EV-01",
+    title: "EV Communication Manager",
+    purpose: "Represents the boundary between mission control and a simulated EV connection and handshake.",
+    responsibilities: ["Connection-state supervision", "Simulated pilot and handshake logic", "Vehicle limits and session status"],
+    inputs: "ev_cmd | connector_state | pilot_state",
+    outputs: "ev_status | handshake_valid | transfer_limits",
+    safety: "No real CCS2 or PLC communication is implemented; invalid connection state blocks transfer.",
+    source: "https://github.com/Lpro402/Conceptual_Design/blob/main/software_demo/metalyte/ev.py",
+  },
+  power: {
+    code: "SW-PWR-01",
+    title: "Power Control Manager",
+    purpose: "Sequences the simulated isolated DC power path from pre-charge through controlled shutdown.",
+    responsibilities: ["Pre-charge sequencing", "Converter and DC-link supervision", "Input/output contactor requests"],
+    inputs: "power_cmd | safety_state | voltage | current | contactor_feedback",
+    outputs: "power_status | converter_enable | contactor_commands | gate_disable_status",
+    safety: "Safety trip disables the converter and opens both simulated contactors before mission logic continues.",
+    source: "https://github.com/Lpro402/Conceptual_Design/blob/main/software_demo/metalyte/power.py",
+  },
+  reaction: {
+    code: "SW-REA-01",
+    title: "Cassette & Reaction Manager",
+    purpose: "Controls the conceptual three-cassette lifecycle and reaction-enablement sequence.",
+    responsibilities: ["Ready-cassette identification and exclusivity", "Water activation and priming sequence", "Reaction state and spent declaration"],
+    inputs: "reaction_cmd | water_confirmed | flow_status | cassette_identity",
+    outputs: "reaction_status | selected_cassette | water_request | spent_state",
+    safety: "Only one cassette may be selected or active; water admission stops on a critical fault.",
+    source: "https://github.com/Lpro402/Conceptual_Design/blob/main/software_demo/metalyte/cassette.py",
+  },
+  thermal: {
+    code: "SW-TFM-01",
+    title: "Thermal & Fluid Manager",
+    purpose: "Coordinates simulated liquid flow, ventilation, purge, and cooldown responsibilities.",
+    responsibilities: ["Pump, valve, and fan commands", "Flow and temperature supervision", "Purge and cooldown sequencing"],
+    inputs: "fluid_cmd | temperature | flow | pressure | H2 | pump_available | fan_available",
+    outputs: "fluid_status | pump_cmd | fan_cmd | valve_cmd | purge_complete",
+    safety: "Critical faults stop water admission while ventilation or purge may remain active when appropriate.",
+    source: "https://github.com/Lpro402/Conceptual_Design/blob/main/software_demo/metalyte/thermal_fluid.py",
+  },
+  service: {
+    code: "SW-SVC-01",
+    title: "Service & Logging Manager",
+    purpose: "Maintains the demonstrator event history, cassette usage, and service-readiness state.",
+    responsibilities: ["Timestamped event logging", "Remaining rescue capacity", "Service-required and cartridge records"],
+    inputs: "log_event | cassette_state | fault_state | completed_event",
+    outputs: "service_state | event_history | remaining_capacity",
+    safety: "A service lock cannot be cleared by ordinary mission commands; demonstrator reset is explicitly non-production behavior.",
+    source: "https://github.com/Lpro402/Conceptual_Design/blob/main/software_demo/metalyte/event_log.py",
+  },
+  hal: {
+    code: "SW-HAL-01",
+    title: "Simulated Hardware Abstraction Layer",
+    purpose: "Provides a stable academic boundary between software logic and simulated measurements and actuators.",
+    responsibilities: ["Sensor snapshot representation", "Actuator-command representation", "Separation from any real hardware or vehicle interface"],
+    inputs: "simulated plant values | software actuator commands",
+    outputs: "sensor snapshot | actuator feedback | communication placeholders",
+    safety: "This layer is simulation-only and contains no real GPIO, CAN, PLC, contactor, pump, or valve control.",
+    source: "https://github.com/Lpro402/Conceptual_Design/blob/main/software_demo/metalyte/sensors.py",
+  },
+};
+
+const ARCHITECTURE_PHASE_ORDER = ["standby", "self-test", "vehicle", "cassette", "reaction", "transfer", "shutdown", "complete"];
+const ARCHITECTURE_PHASE_BY_STATE = {
+  STANDBY: "standby", SELF_TEST: "self-test", VEHICLE_CONNECTION: "vehicle",
+  CASSETTE_SELECTION: "cassette", WATER_ACTIVATION: "reaction", PRIMING: "reaction",
+  PRE_CHARGE: "transfer", POWER_TRANSFER: "transfer", DERATING: "transfer",
+  RAMP_DOWN: "shutdown", PURGE_COOLDOWN: "shutdown", EMERGENCY_SHUTDOWN: "shutdown",
+  READY: "complete", SERVICE_REQUIRED: "complete", FAULT_LOCKED: "complete",
+};
+
 const runtime = {
   state: "STANDBY",
   cassettes: ["DRY_READY", "DRY_READY", "DRY_READY"],
@@ -171,6 +273,7 @@ const runtime = {
 };
 
 let transferTimer = null;
+let selectedArchitectureModule = "main";
 const byId = (id) => document.getElementById(id);
 const queryAll = (selector) => [...document.querySelectorAll(selector)];
 
@@ -422,6 +525,7 @@ function render() {
   renderHeader();
   renderMission();
   renderLCD();
+  renderArchitecture();
   renderCassettes();
   renderFlow();
   renderDiagnostics();
@@ -576,6 +680,72 @@ function updateLCDClock() {
   });
 }
 
+function architectureActiveModules() {
+  const active = new Set(["main", "hmi", "safety", "service", "hal"]);
+  if (runtime.vehicleConnected || !["STANDBY", "SELF_TEST"].includes(runtime.state)) active.add("ev");
+  if (runtime.selectedCassette !== null || ["CASSETTE_SELECTION", "WATER_ACTIVATION", "PRIMING"].includes(runtime.state)) active.add("reaction");
+  if (["PRE_CHARGE", "POWER_TRANSFER", "DERATING", "RAMP_DOWN"].includes(runtime.state)) active.add("power");
+  if (["WATER_ACTIVATION", "PRIMING", "PRE_CHARGE", "POWER_TRANSFER", "DERATING", "RAMP_DOWN", "PURGE_COOLDOWN", "EMERGENCY_SHUTDOWN"].includes(runtime.state)) active.add("thermal");
+  return active;
+}
+
+function architectureModuleStatus(moduleName, active) {
+  if (moduleName === "safety") return runtime.fault ? "TRIPPED" : "ARMED";
+  if (moduleName === "main") return runtime.fault ? "OVERRIDDEN" : "ACTIVE";
+  if (moduleName === "hmi") return "MONITOR";
+  if (moduleName === "hal") return "ONLINE";
+  if (moduleName === "service") return runtime.state === "SERVICE_REQUIRED" ? "LOCKOUT" : "LOGGING";
+  if (moduleName === "ev" && runtime.vehicleConnected) return "LINKED";
+  if (moduleName === "reaction" && runtime.selectedCassette !== null) return `C${runtime.selectedCassette + 1} ${runtime.cassettes[runtime.selectedCassette]}`;
+  if (moduleName === "power" && ["POWER_TRANSFER", "DERATING"].includes(runtime.state)) return "TRANSFER";
+  if (moduleName === "thermal" && (runtime.actuators.pump || runtime.actuators.fan)) return "RUNNING";
+  return active ? "ACTIVE" : "STANDBY";
+}
+
+function renderArchitectureInspector(activeModules) {
+  const module = ARCHITECTURE_MODULES[selectedArchitectureModule];
+  const moduleActive = activeModules.has(selectedArchitectureModule);
+  const moduleAlert = selectedArchitectureModule === "safety" && Boolean(runtime.fault);
+  byId("architecture-detail-code").textContent = module.code;
+  byId("architecture-detail-title").textContent = module.title;
+  byId("architecture-detail-purpose").textContent = module.purpose;
+  byId("architecture-detail-responsibilities").innerHTML = module.responsibilities.map((item) => `<li>${item}</li>`).join("");
+  byId("architecture-detail-inputs").textContent = module.inputs;
+  byId("architecture-detail-outputs").textContent = module.outputs;
+  byId("architecture-detail-safety").textContent = module.safety;
+  byId("architecture-source-link").href = module.source;
+  byId("architecture-detail-runtime").textContent = architectureModuleStatus(selectedArchitectureModule, moduleActive);
+  byId("architecture-detail-runtime").parentElement.classList.toggle("is-alert", moduleAlert);
+}
+
+function renderArchitecture() {
+  const faulted = Boolean(runtime.fault);
+  const activeModules = architectureActiveModules();
+  byId("architecture-runtime-state").textContent = runtime.state;
+  byId("architecture-runtime-state").closest(".architecture-runtime-badge").classList.toggle("is-fault", faulted);
+
+  queryAll(".architecture-module").forEach((moduleElement) => {
+    const moduleName = moduleElement.dataset.architectureModule;
+    const active = activeModules.has(moduleName);
+    const alert = faulted && moduleName === "safety";
+    moduleElement.classList.toggle("is-active", active);
+    moduleElement.classList.toggle("is-alert", alert);
+    moduleElement.classList.toggle("is-selected", moduleName === selectedArchitectureModule);
+    moduleElement.querySelector(".module-live").textContent = architectureModuleStatus(moduleName, active);
+  });
+
+  const currentPhase = ARCHITECTURE_PHASE_BY_STATE[runtime.state] || "standby";
+  const currentIndex = ARCHITECTURE_PHASE_ORDER.indexOf(currentPhase);
+  queryAll("[data-architecture-phase]").forEach((phaseElement) => {
+    const phaseIndex = ARCHITECTURE_PHASE_ORDER.indexOf(phaseElement.dataset.architecturePhase);
+    phaseElement.classList.toggle("is-complete", !faulted && phaseIndex < currentIndex);
+    phaseElement.classList.toggle("is-current", !faulted && phaseIndex === currentIndex);
+    phaseElement.classList.toggle("is-fault", faulted && phaseIndex === currentIndex);
+  });
+
+  renderArchitectureInspector(activeModules);
+}
+
 function renderCassettes() {
   byId("cassette-grid").innerHTML = runtime.cassettes.map((state, index) => {
     const [label, description, cssClass] = CASSETTE_UI[state];
@@ -665,6 +835,7 @@ function renderLog() {
 function selectView(viewName) {
   queryAll(".view-tab").forEach((button) => button.classList.toggle("is-active", button.dataset.view === viewName));
   queryAll(".view-panel").forEach((panel) => panel.classList.toggle("is-active", panel.id === `view-${viewName}`));
+  document.body.classList.toggle("lcd-standalone", viewName === "lcd" && new URLSearchParams(window.location.search).get("view") === "lcd");
 }
 
 function initializeFaultSelect() {
@@ -695,13 +866,22 @@ function initializeShowcaseScenario() {
 }
 
 function initializeRequestedView() {
-  const view = new URLSearchParams(window.location.search).get("view");
-  if (!["mission", "lcd", "diagnostics", "service"].includes(view)) return;
+  const params = new URLSearchParams(window.location.search);
+  const view = params.get("view");
+  if (!["mission", "lcd", "architecture", "diagnostics", "service"].includes(view)) return;
   selectView(view);
   document.body.classList.toggle("lcd-standalone", view === "lcd");
+  document.body.classList.toggle(
+    "architecture-capture",
+    view === "architecture" && params.get("capture") === "architecture",
+  );
 }
 
 queryAll(".view-tab").forEach((button) => button.addEventListener("click", () => selectView(button.dataset.view)));
+queryAll(".architecture-module").forEach((button) => button.addEventListener("click", () => {
+  selectedArchitectureModule = button.dataset.architectureModule;
+  renderArchitecture();
+}));
 byId("primary-action").addEventListener("click", handlePrimaryAction);
 byId("emergency-action").addEventListener("click", () => injectFault("E_STOP"));
 byId("lcd-primary-action").addEventListener("click", handlePrimaryAction);
