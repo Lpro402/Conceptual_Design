@@ -494,6 +494,9 @@ function renderLCD() {
   byId("lcd-screen").classList.toggle("is-fault", faulted);
   byId("lcd-alert").classList.toggle("is-visible", faulted);
   byId("lcd-alert-copy").textContent = runtime.fault ? FAULTS[runtime.fault].value : "Power path isolated";
+  byId("lcd-alarm-count").textContent = faulted ? "1" : "0";
+  byId("lcd-panel-status").textContent = faulted ? "SAFETY TRIP" : live ? "TRANSFER ENABLED" : "SYSTEM READY";
+  byId("lcd-panel-status").parentElement.classList.toggle("is-fault", faulted);
   byId("lcd-state-title").textContent = state.title.toUpperCase();
   byId("lcd-state-copy").textContent = state.copy;
   byId("lcd-progress-bar").style.width = `${progress}%`;
@@ -502,6 +505,36 @@ function renderLCD() {
     : `STEP ${Math.min(stepIndex + 1, 11)} / 11`;
   byId("lcd-connection").classList.toggle("is-connected", runtime.vehicleConnected);
   byId("lcd-vehicle-status").textContent = runtime.vehicleConnected ? "CONNECTED" : "DISCONNECTED";
+
+  const permissives = {
+    "lcd-permissive-hvil": runtime.sensors.hvil,
+    "lcd-permissive-iso": runtime.sensors.isolation,
+    "lcd-permissive-flow": runtime.sensors.flow >= 0.5,
+    "lcd-permissive-thermal": runtime.sensors.temperature < 65,
+  };
+  Object.entries(permissives).forEach(([id, valid]) => {
+    byId(id).classList.toggle("is-valid", valid);
+    byId(id).classList.toggle("is-fault", !valid);
+  });
+
+  const actuatorStates = {
+    "lcd-pump-status": [runtime.actuators.pump, "RUN", "STOP"],
+    "lcd-fan-status": [runtime.actuators.fan, "RUN", "STOP"],
+    "lcd-input-status": [runtime.actuators.inputContactor, "CLOSED", "OPEN"],
+    "lcd-output-status": [runtime.actuators.outputContactor, "CLOSED", "OPEN"],
+  };
+  Object.entries(actuatorStates).forEach(([id, [active, onLabel, offLabel]]) => {
+    byId(id).textContent = active ? onLabel : offLabel;
+    byId(id).classList.toggle("is-run", active);
+  });
+
+  const trendPath = faulted
+    ? "M0 75 L22 72 L45 58 L70 38 L96 29 L125 25 L158 24 L193 24 L226 23 L260 23 L297 24 L330 24 L350 31 L370 67 L395 79 L420 80"
+    : live
+      ? "M0 75 L22 72 L45 58 L70 38 L96 29 L125 25 L158 24 L193 24 L226 23 L260 23 L297 24 L333 23 L370 23 L420 23"
+      : "M0 80 L420 80";
+  byId("lcd-trend-line").setAttribute("d", trendPath);
+  byId("lcd-trend-line").classList.toggle("is-fault", faulted);
 
   const actionLabel = LCD_ACTIONS[runtime.state];
   byId("lcd-primary-label").textContent = actionLabel;

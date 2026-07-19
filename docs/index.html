@@ -139,11 +139,16 @@
           <span class="lcd-screw lcd-screw--bl" aria-hidden="true"></span>
           <span class="lcd-screw lcd-screw--br" aria-hidden="true"></span>
 
+          <div class="lcd-hardware-layout">
           <div class="lcd-screen" id="lcd-screen">
             <header class="lcd-topbar">
-              <div class="lcd-brand"><span class="lcd-brand-icon">⚡</span><span><strong>METALYTE</strong><small>PRO · MPRO</small></span></div>
+              <div class="lcd-brand"><span class="lcd-brand-icon">M</span><span><strong>METALYTE PRO</strong><small>MPRO CONTROL PANEL</small></span></div>
               <div class="lcd-clock"><strong id="lcd-clock">00:00</strong><small>LOCAL TIME</small></div>
-              <div class="lcd-connection" id="lcd-connection"><span></span><strong>EV LINK</strong><small id="lcd-vehicle-status">DISCONNECTED</small></div>
+              <div class="lcd-system-meta">
+                <span><small>CTRL</small><strong>ONLINE</strong></span>
+                <span><small>ALARM</small><strong id="lcd-alarm-count">0</strong></span>
+                <div class="lcd-connection" id="lcd-connection"><i></i><span><strong>EV LINK</strong><small id="lcd-vehicle-status">DISCONNECTED</small></span></div>
+              </div>
             </header>
 
             <div class="lcd-alert" id="lcd-alert">
@@ -152,28 +157,54 @@
             </div>
 
             <div class="lcd-main">
-              <section class="lcd-state-card">
-                <span class="lcd-label">SYSTEM MODE</span>
+              <section class="lcd-state-card lcd-panel-section">
+                <span class="lcd-label">01 / OPERATING STATE</span>
                 <strong id="lcd-state-title">READY</strong>
                 <p id="lcd-state-copy">System ready for a rescue event.</p>
                 <div class="lcd-step-track"><span id="lcd-progress-bar"></span></div>
                 <small id="lcd-progress-label">STEP 1 / 11</small>
+                <div class="lcd-interlock-block">
+                  <span class="lcd-subheading">TRANSFER PERMISSIVES</span>
+                  <div class="lcd-interlock-grid">
+                    <span id="lcd-permissive-hvil"><i></i>HVIL</span>
+                    <span id="lcd-permissive-iso"><i></i>ISOLATION</span>
+                    <span id="lcd-permissive-flow"><i></i>FLOW</span>
+                    <span id="lcd-permissive-thermal"><i></i>THERMAL</span>
+                  </div>
+                </div>
               </section>
 
-              <section class="lcd-output-card">
-                <span class="lcd-label">OUTPUT POWER</span>
+              <section class="lcd-output-card lcd-panel-section">
+                <span class="lcd-label">02 / DC OUTPUT</span>
                 <div class="lcd-power-value"><strong id="lcd-power">0.0</strong><span>kW</span></div>
                 <div class="lcd-energy-row"><span>ENERGY DELIVERED</span><strong><span id="lcd-energy">0.00</span> kWh</strong></div>
                 <div class="lcd-energy-track"><span id="lcd-energy-bar"></span></div>
+                <div class="lcd-trend-block">
+                  <div class="lcd-trend-heading"><span>OUTPUT TREND</span><small>LAST 10 MIN</small></div>
+                  <div class="lcd-trend-chart">
+                    <span class="lcd-trend-axis lcd-trend-axis--high">4.0</span>
+                    <span class="lcd-trend-axis lcd-trend-axis--low">0.0</span>
+                    <svg viewBox="0 0 420 92" preserveAspectRatio="none" aria-label="Simulated output power trend">
+                      <path class="lcd-trend-grid" d="M0 15H420M0 46H420M0 77H420M70 0V92M140 0V92M210 0V92M280 0V92M350 0V92"/>
+                      <path class="lcd-trend-line" id="lcd-trend-line" d="M0 75 L22 72 L45 58 L70 38 L96 29 L125 25 L158 24 L193 24 L226 23 L260 23 L297 24 L333 23 L370 23 L420 23"/>
+                    </svg>
+                  </div>
+                </div>
               </section>
 
-              <section class="lcd-vitals-card">
-                <span class="lcd-label">LIVE VITALS</span>
+              <section class="lcd-vitals-card lcd-panel-section">
+                <span class="lcd-label">03 / PROCESS VALUES</span>
                 <div class="lcd-vitals-grid">
                   <div><span>STACK</span><strong><b id="lcd-voltage">57.6</b> V</strong></div>
                   <div><span>CURRENT</span><strong><b id="lcd-current">0.0</b> A</strong></div>
                   <div><span>TEMP</span><strong><b id="lcd-temperature">25.0</b> °C</strong></div>
                   <div><span>FLOW</span><strong><b id="lcd-flow">0.0</b> L/min</strong></div>
+                </div>
+                <div class="lcd-process-list">
+                  <div><span>PUMP P-01</span><strong id="lcd-pump-status">STOP</strong></div>
+                  <div><span>VENT FAN F-01</span><strong id="lcd-fan-status">STOP</strong></div>
+                  <div><span>INPUT CONTACTOR</span><strong id="lcd-input-status">OPEN</strong></div>
+                  <div><span>OUTPUT CONTACTOR</span><strong id="lcd-output-status">OPEN</strong></div>
                 </div>
               </section>
             </div>
@@ -181,9 +212,9 @@
             <div class="lcd-energy-path" id="lcd-energy-path">
               <div data-lcd-flow="cassette"><span>Al</span><strong>CARTRIDGE</strong><small id="lcd-cartridge-state">READY</small></div>
               <i></i>
-              <div data-lcd-flow="stack"><span>▤</span><strong>AL-AIR</strong><small id="lcd-stack-state">IDLE</small></div>
+              <div data-lcd-flow="stack"><span>ST</span><strong>AL-AIR</strong><small id="lcd-stack-state">IDLE</small></div>
               <i></i>
-              <div data-lcd-flow="converter"><span>⚡</span><strong>DC/DC</strong><small id="lcd-converter-state">ISOLATED</small></div>
+              <div data-lcd-flow="converter"><span>DC</span><strong>DC/DC</strong><small id="lcd-converter-state">ISOLATED</small></div>
               <i></i>
               <div data-lcd-flow="vehicle"><span>EV</span><strong>VEHICLE</strong><small id="lcd-ev-state">OFFLINE</small></div>
             </div>
@@ -191,12 +222,23 @@
             <div class="lcd-bottom-strip">
               <div class="lcd-cassette-summary" id="lcd-cassette-summary"></div>
               <div class="lcd-softkeys">
-                <button class="lcd-softkey" id="lcd-diagnostics-link"><span>◫</span>DIAGNOSTICS</button>
-                <button class="lcd-softkey lcd-softkey--primary" id="lcd-primary-action"><span>▶</span><b id="lcd-primary-label">WAKE UP</b></button>
-                <button class="lcd-softkey" id="lcd-service-link"><span>↻</span>SERVICE</button>
+                <button class="lcd-softkey" id="lcd-diagnostics-link"><span>F1</span>DIAGNOSTICS</button>
+                <button class="lcd-softkey lcd-softkey--primary" id="lcd-primary-action"><span>F2</span><b id="lcd-primary-label">WAKE UP</b></button>
+                <button class="lcd-softkey" id="lcd-service-link"><span>F3</span>SERVICE</button>
               </div>
-              <button class="lcd-estop" id="lcd-emergency-action"><span>!</span>E-STOP</button>
+              <div class="lcd-panel-status"><span></span><strong id="lcd-panel-status">SYSTEM READY</strong></div>
             </div>
+          </div>
+          <aside class="lcd-hardware-panel" aria-label="Physical panel controls">
+            <div class="lcd-hardware-badge"><strong>MPRO</strong><small>HMI-01</small></div>
+            <div class="lcd-power-indicator"><span></span><small>POWER</small></div>
+            <button class="lcd-estop" id="lcd-emergency-action" aria-label="Emergency stop">
+              <span class="lcd-estop-cap"><i></i></span>
+              <strong>EMERGENCY</strong><small>STOP</small>
+            </button>
+            <div class="lcd-speaker" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            <div class="lcd-panel-mark"><span>IP54</span><span>24 VDC</span></div>
+          </aside>
           </div>
         </section>
 
