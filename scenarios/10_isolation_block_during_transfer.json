@@ -1,0 +1,100 @@
+{
+ "name": "[8.1] IMD block threshold during transfer trips the independent supervisor",
+ "config2_changes": "8.1, 8.3",
+ "disclaimer": "Academic simulation; all thresholds and timings are placeholders.",
+ "steps": [
+  [
+   "wake"
+  ],
+  [
+   "run_self_test"
+  ],
+  [
+   "answer_environment",
+   {
+    "enclosed": false
+   }
+  ],
+  [
+   "confirm_deployment",
+   {
+    "diffuser_outside_confirmed": true
+   }
+  ],
+  [
+   "verify_connection"
+  ],
+  [
+   "handshake"
+  ],
+  [
+   "pour_water",
+   {
+    "liters": 1.8
+   }
+  ],
+  [
+   "confirm_fill"
+  ],
+  [
+   "confirm_activation"
+  ],
+  [
+   "complete_admission"
+  ],
+  [
+   "prime"
+  ],
+  [
+   "start_power_transfer",
+   {
+    "requested_kw": 10.0
+   }
+  ],
+  [
+   "tick",
+   {
+    "seconds": 120
+   }
+  ],
+  [
+   "set",
+   {
+    "isolation_kohm": 10.0
+   }
+  ],
+  [
+   "tick",
+   {
+    "seconds": 10
+   }
+  ],
+  [
+   "expect",
+   {
+    "state": "POWER_ISOLATION",
+    "cartridges": [
+     "FAULTED",
+     "DRY_READY",
+     "DRY_READY"
+    ],
+    "actuators": {
+     "output_contactor_closed": false,
+     "gate_disable": true
+    }
+   }
+  ],
+  [
+   "advance_shutdown"
+  ],
+  [
+   "advance_shutdown"
+  ],
+  [
+   "expect",
+   {
+    "state": "FAULT_LOCKED"
+   }
+  ]
+ ]
+}

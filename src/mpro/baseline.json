@@ -1,0 +1,79 @@
+{
+  "baseline_id": "MPRO-ALT1-CONFIG2",
+  "description": "Locked Tier 0-1 operating point of MPRO alternative 1, Configuration 2. Conceptual design values, not test evidence.",
+  "sources": {
+    "electrochemical": "Nidbach 3 kit, super-design 4.1 (electrochemical)",
+    "chemical": "Nidbach 3 kit, super-design 4.2 (chemical)",
+    "control": "Nidbach 3 kit, super-design 4.3 (control), Configuration 2 update 8.1",
+    "thermal": "Nidbach 3 kit, super-design 4.4 (thermal), Configuration 2 update 7.1",
+    "software": "Nidbach 3 kit, super-design 4.6 (software), Configuration 2 updates 1.1, 1.2, 2.1, 4.1, 5.2, 8.1, 9.1"
+  },
+  "architecture": {
+    "cartridges": 3,
+    "events_per_cartridge": 1,
+    "active_cartridges_at_a_time": 1,
+    "anode_geometry": "Folded Double-Face Accordion",
+    "shared_dry_bop": ["water metering and selection (220)", "air filter and blower", "gas manifold and external vent", "DC link", "LIC", "pre-charge", "isolated buck-boost DC/DC", "main controller", "independent safety supervisor", "HMI", "CCS2 interface"]
+  },
+  "operating_point": {
+    "usable_energy_per_event_kwh": 3.0,
+    "usable_energy_total_kwh": 9.0,
+    "net_power_nominal_kw": 10.0,
+    "net_power_boost_kw": 12.0,
+    "nominal_duration_min": 18,
+    "boost_duration_min": 15,
+    "gross_power_nominal_kw": [10.9, 11.0],
+    "gross_power_max_kw": 13.0,
+    "conversion_efficiency": 0.92,
+    "stack_voltage_nominal_v": 96,
+    "stack_voltage_envelope_v": [80, 110],
+    "stack_current_nominal_a": [110, 115],
+    "stack_current_boost_a": [130, 140],
+    "power_density_nominal_mw_cm2": [240, 250],
+    "power_density_boost_mw_cm2": [280, 290],
+    "active_area_m2": 4.5
+  },
+  "chemistry": {
+    "cell_type": "primary aluminum-air, water-activated",
+    "anode_alloy": "Al-0.5Mg-0.05Ga-0.05In-0.10Sn wt.%",
+    "anode_fallback": "A6061",
+    "aluminum_mass_kg": 1.15,
+    "electrolyte": "dry KOH",
+    "koh_charge_g": 404,
+    "electrolyte_molarity_after_activation": 4.0,
+    "inhibitor": "hybrid stannate + organic inhibitor (loading TBD)",
+    "cathode": "Ag-enhanced MnO2 / Carbon / PTFE gas-diffusion cathode",
+    "oxygen_consumed_kg": 1.02,
+    "al_oh3_equivalent_kg": 3.32,
+    "wet_content_at_end_kg": [4.3, 4.5],
+    "cartridge_volume_l": [5.5, 6.5],
+    "cartridge_dry_mass_kg": [2.8, 3.0],
+    "cartridge_spent_mass_kg": [6.2, 6.5],
+    "h2_design_rate": "TBD pending the updated chemistry model",
+    "reactions": {
+      "anode": "Al + 4OH⁻ → Al(OH)₄⁻ + 3e⁻",
+      "cathode": "O₂ + 2H₂O + 4e⁻ → 4OH⁻",
+      "overall": "4Al + 3O₂ + 6H₂O → 4Al(OH)₃",
+      "side_reaction": "2Al + 6H₂O + 2OH⁻ → 2Al(OH)₄⁻ + 3H₂↑",
+      "precipitation": "Al(OH)₄⁻ → Al(OH)₃↓ + OH⁻"
+    }
+  },
+  "water": {
+    "target_l": 1.8,
+    "minimum_l": 1.8,
+    "reject_above_l": 2.2,
+    "prime_and_dissolution_max_s": 60
+  },
+  "thermal": {
+    "electrolyte_nominal_c": [35, 50],
+    "boost_disable_c": 52,
+    "derate_c": 55,
+    "shutdown_c": 65,
+    "converter_losses_kw": [0.9, 1.0],
+    "cooling": "Transient hybrid: internal electrolyte spreading + integral dry heat interface + forced clean air; electronics in a closed compartment conducting to baseplate 380, cooling tunnel 390 driven by blower 370",
+    "ambient_operating_c": [-25, 50],
+    "storage_c": [-40, 85]
+  },
+  "cartridge_state_machine": ["DRY_READY", "SELECTED", "FILL_SESSION", "WATER_ADMISSION", "PRIME_FLOW_CHECK", "ACTIVE_POWER", "DERATED", "RAMP_DOWN", "PURGE_COOLDOWN", "SPENT"],
+  "system_state_machine_config2": ["SYSTEM_STANDBY", "SELF_TEST", "ENVIRONMENT_CHECK", "AWAIT_DEPLOY", "AWAIT_CONNECT", "EV_HANDSHAKE", "FILL_SESSION", "CONFIRM_ACTIVATION", "WATER_ADMISSION", "PRIME_FLOW_CHECK", "PRECHARGE", "ACTIVE_POWER", "RAMP_DOWN", "PURGE_COOLDOWN", "SAFE_TO_DISCONNECT"]
+}

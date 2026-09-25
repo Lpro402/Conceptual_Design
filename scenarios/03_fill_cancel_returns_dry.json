@@ -1,0 +1,60 @@
+{
+ "name": "[1.1] Cancel before wetting returns the cartridge to DRY_READY",
+ "config2_changes": "1.1",
+ "disclaimer": "Academic simulation; all thresholds and timings are placeholders.",
+ "steps": [
+  [
+   "wake"
+  ],
+  [
+   "run_self_test"
+  ],
+  [
+   "answer_environment",
+   {
+    "enclosed": false
+   }
+  ],
+  [
+   "confirm_deployment",
+   {
+    "diffuser_outside_confirmed": true
+   }
+  ],
+  [
+   "verify_connection"
+  ],
+  [
+   "handshake"
+  ],
+  [
+   "pour_water",
+   {
+    "liters": 1.0
+   }
+  ],
+  [
+   "cancel_fill"
+  ],
+  [
+   "expect",
+   {
+    "state": "SAFE_TO_DISCONNECT",
+    "cartridges": [
+     "DRY_READY",
+     "DRY_READY",
+     "DRY_READY"
+    ]
+   }
+  ],
+  [
+   "disconnect"
+  ],
+  [
+   "expect",
+   {
+    "state": "SYSTEM_STANDBY"
+   }
+  ]
+ ]
+}

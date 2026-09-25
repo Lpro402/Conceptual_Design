@@ -1,0 +1,46 @@
+{
+ "name": "[8.1] Both protocols fail: nothing is energised and the cartridge stays dry",
+ "config2_changes": "8.1",
+ "disclaimer": "Academic simulation; all thresholds and timings are placeholders.",
+ "steps": [
+  [
+   "wake"
+  ],
+  [
+   "run_self_test"
+  ],
+  [
+   "answer_environment",
+   {
+    "enclosed": false
+   }
+  ],
+  [
+   "confirm_deployment",
+   {
+    "diffuser_outside_confirmed": true
+   }
+  ],
+  [
+   "verify_connection"
+  ],
+  [
+   "handshake",
+   {
+    "iso15118_ok": false,
+    "din70121_ok": false
+   }
+  ],
+  [
+   "expect",
+   {
+    "state": "SAFE_TO_DISCONNECT",
+    "cartridges": [
+     "DRY_READY",
+     "DRY_READY",
+     "DRY_READY"
+    ]
+   }
+  ]
+ ]
+}

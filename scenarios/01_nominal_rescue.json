@@ -1,0 +1,88 @@
+{
+ "name": "Nominal rescue event with the Configuration 2 gates",
+ "config2_changes": "all",
+ "disclaimer": "Academic simulation; all thresholds and timings are placeholders.",
+ "steps": [
+  [
+   "wake"
+  ],
+  [
+   "run_self_test"
+  ],
+  [
+   "answer_environment",
+   {
+    "enclosed": false
+   }
+  ],
+  [
+   "confirm_deployment",
+   {
+    "diffuser_outside_confirmed": true
+   }
+  ],
+  [
+   "verify_connection"
+  ],
+  [
+   "handshake"
+  ],
+  [
+   "pour_water",
+   {
+    "liters": 1.8
+   }
+  ],
+  [
+   "confirm_fill"
+  ],
+  [
+   "confirm_activation"
+  ],
+  [
+   "complete_admission"
+  ],
+  [
+   "prime"
+  ],
+  [
+   "start_power_transfer",
+   {
+    "requested_kw": 10.0
+   }
+  ],
+  [
+   "tick",
+   {
+    "seconds": 3000
+   }
+  ],
+  [
+   "expect",
+   {
+    "state": "RAMP_DOWN",
+    "min_energy_kwh": 2.95
+   }
+  ],
+  [
+   "advance_shutdown"
+  ],
+  [
+   "advance_shutdown"
+  ],
+  [
+   "disconnect"
+  ],
+  [
+   "expect",
+   {
+    "state": "SYSTEM_STANDBY",
+    "cartridges": [
+     "SPENT",
+     "DRY_READY",
+     "DRY_READY"
+    ]
+   }
+  ]
+ ]
+}

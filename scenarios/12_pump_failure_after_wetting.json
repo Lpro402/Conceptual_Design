@@ -1,0 +1,101 @@
+{
+ "name": "Pump failure during transfer: isolate, purge, cool down, lock",
+ "config2_changes": "safety",
+ "disclaimer": "Academic simulation; all thresholds and timings are placeholders.",
+ "steps": [
+  [
+   "wake"
+  ],
+  [
+   "run_self_test"
+  ],
+  [
+   "answer_environment",
+   {
+    "enclosed": false
+   }
+  ],
+  [
+   "confirm_deployment",
+   {
+    "diffuser_outside_confirmed": true
+   }
+  ],
+  [
+   "verify_connection"
+  ],
+  [
+   "handshake"
+  ],
+  [
+   "pour_water",
+   {
+    "liters": 1.8
+   }
+  ],
+  [
+   "confirm_fill"
+  ],
+  [
+   "confirm_activation"
+  ],
+  [
+   "complete_admission"
+  ],
+  [
+   "prime"
+  ],
+  [
+   "start_power_transfer",
+   {
+    "requested_kw": 10.0
+   }
+  ],
+  [
+   "tick",
+   {
+    "seconds": 60
+   }
+  ],
+  [
+   "set",
+   {
+    "pump_available": false
+   }
+  ],
+  [
+   "tick",
+   {
+    "seconds": 10
+   }
+  ],
+  [
+   "expect",
+   {
+    "state": "POWER_ISOLATION",
+    "actuators": {
+     "pump_on": false,
+     "tunnel_blower_on": true
+    }
+   }
+  ],
+  [
+   "advance_shutdown"
+  ],
+  [
+   "expect",
+   {
+    "state": "PURGE_COOLDOWN"
+   }
+  ],
+  [
+   "advance_shutdown"
+  ],
+  [
+   "expect",
+   {
+    "state": "FAULT_LOCKED"
+   }
+  ]
+ ]
+}

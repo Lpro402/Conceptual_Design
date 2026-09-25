@@ -1,0 +1,73 @@
+{
+ "name": "12 kW Boost at 50 °C ambient is disabled and the event derates",
+ "config2_changes": "7.1",
+ "disclaimer": "Academic simulation; all thresholds and timings are placeholders.",
+ "steps": [
+  [
+   "set",
+   {
+    "ambient_c": 50.0
+   }
+  ],
+  [
+   "wake"
+  ],
+  [
+   "run_self_test"
+  ],
+  [
+   "answer_environment",
+   {
+    "enclosed": false
+   }
+  ],
+  [
+   "confirm_deployment",
+   {
+    "diffuser_outside_confirmed": true
+   }
+  ],
+  [
+   "verify_connection"
+  ],
+  [
+   "handshake"
+  ],
+  [
+   "pour_water",
+   {
+    "liters": 1.8
+   }
+  ],
+  [
+   "confirm_fill"
+  ],
+  [
+   "confirm_activation"
+  ],
+  [
+   "complete_admission"
+  ],
+  [
+   "prime"
+  ],
+  [
+   "start_power_transfer",
+   {
+    "requested_kw": 12.0
+   }
+  ],
+  [
+   "tick",
+   {
+    "seconds": 900
+   }
+  ],
+  [
+   "expect",
+   {
+    "log_contains": "DERATED"
+   }
+  ]
+ ]
+}

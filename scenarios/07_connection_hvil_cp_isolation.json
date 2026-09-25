@@ -1,0 +1,89 @@
+{
+ "name": "[8.1] HVIL window, CP level and IMD block before transfer",
+ "config2_changes": "8.1, 8.4",
+ "disclaimer": "Academic simulation; all thresholds and timings are placeholders.",
+ "steps": [
+  [
+   "wake"
+  ],
+  [
+   "run_self_test"
+  ],
+  [
+   "answer_environment",
+   {
+    "enclosed": false
+   }
+  ],
+  [
+   "confirm_deployment",
+   {
+    "diffuser_outside_confirmed": true
+   }
+  ],
+  [
+   "set",
+   {
+    "hvil_closed": false
+   }
+  ],
+  [
+   "verify_connection"
+  ],
+  [
+   "expect",
+   {
+    "state": "AWAIT_CONNECT",
+    "blocker_contains": "HVIL"
+   }
+  ],
+  [
+   "set",
+   {
+    "hvil_closed": true,
+    "cp_voltage_v": 5.5
+   }
+  ],
+  [
+   "verify_connection"
+  ],
+  [
+   "expect",
+   {
+    "blocker_contains": "CP level"
+   }
+  ],
+  [
+   "set",
+   {
+    "cp_voltage_v": 9.0,
+    "isolation_kohm": 30.0
+   }
+  ],
+  [
+   "verify_connection"
+  ],
+  [
+   "expect",
+   {
+    "blocker_contains": "block threshold"
+   }
+  ],
+  [
+   "set",
+   {
+    "isolation_kohm": 120.0
+   }
+  ],
+  [
+   "verify_connection"
+  ],
+  [
+   "expect",
+   {
+    "state": "EV_HANDSHAKE",
+    "log_contains": "IMD warning threshold"
+   }
+  ]
+ ]
+}

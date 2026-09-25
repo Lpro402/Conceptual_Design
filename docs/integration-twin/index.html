@@ -1,0 +1,748 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MPRO Integration Twin</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #071018;
+      --panel: #0d1924;
+      --panel-2: #122332;
+      --line: #284156;
+      --ink: #edf7ff;
+      --muted: #9db3c6;
+      --cyan: #42d7e8;
+      --blue: #5a8dff;
+      --green: #55db9a;
+      --amber: #ffc85a;
+      --red: #ff6b7a;
+      --purple: #ad8cff;
+      --shadow: 0 18px 50px rgba(0, 0, 0, .24);
+      font-family: "Segoe UI", Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 90% -10%, rgba(66, 215, 232, .13), transparent 34rem),
+        radial-gradient(circle at -10% 35%, rgba(90, 141, 255, .1), transparent 30rem),
+        var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+
+    button, select, input { font: inherit; }
+
+    .app-shell { width: min(1540px, calc(100% - 28px)); margin: 0 auto; padding: 20px 0 52px; }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 20px;
+      align-items: center;
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: linear-gradient(135deg, rgba(18, 35, 50, .98), rgba(8, 20, 30, .96));
+      box-shadow: var(--shadow);
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: auto -80px -100px auto;
+      width: 330px;
+      height: 330px;
+      border: 48px solid rgba(66, 215, 232, .05);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .eyebrow { color: var(--cyan); font-size: 12px; font-weight: 800; letter-spacing: .12em; }
+    h1 { margin: 8px 0 8px; font-size: clamp(28px, 3.5vw, 50px); line-height: 1.06; }
+    .hero p { margin: 0; max-width: 920px; color: var(--muted); line-height: 1.65; }
+    .hero-badges { display: grid; gap: 8px; min-width: 210px; }
+    .badge { border: 1px solid var(--line); border-radius: 999px; padding: 8px 12px; color: var(--muted); background: rgba(7, 16, 24, .64); text-align: center; font-size: 12px; }
+    .badge strong { color: var(--ink); }
+
+    .notice {
+      margin-top: 14px;
+      border: 1px solid rgba(255, 200, 90, .4);
+      border-right: 5px solid var(--amber);
+      background: rgba(255, 200, 90, .075);
+      border-radius: 14px;
+      padding: 13px 16px;
+      color: #ffe4a9;
+      line-height: 1.6;
+      font-size: 13px;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: linear-gradient(180deg, rgba(18, 35, 50, .94), rgba(10, 24, 35, .95));
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-header { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 17px 19px; border-bottom: 1px solid var(--line); }
+    .panel-header h2 { margin: 0; font-size: 18px; }
+    .panel-header p { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+    .panel-body { padding: 18px; }
+    .section-grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: 14px; margin-top: 14px; }
+    .full { grid-column: 1 / -1; }
+
+    .controls { margin-top: 14px; }
+    .control-grid { display: grid; grid-template-columns: repeat(5, minmax(150px, 1fr)); gap: 12px; }
+    label.field { display: grid; gap: 6px; color: var(--muted); font-size: 12px; font-weight: 700; }
+    select {
+      width: 100%;
+      color: var(--ink);
+      border: 1px solid var(--line);
+      background: #08141e;
+      border-radius: 11px;
+      padding: 10px 11px;
+      outline: none;
+    }
+    select:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(66, 215, 232, .12); }
+
+    .switches { display: flex; flex-wrap: wrap; gap: 10px 20px; padding: 14px 0 0; }
+    .switch { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
+    .switch input { accent-color: var(--cyan); width: 17px; height: 17px; }
+    .button-row { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 14px; }
+    button {
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      padding: 10px 14px;
+      color: var(--ink);
+      background: #132536;
+      cursor: pointer;
+      transition: transform .15s ease, border-color .15s ease, background .15s ease;
+    }
+    button:hover { transform: translateY(-1px); border-color: #4f6d85; }
+    button:focus-visible { outline: 3px solid rgba(66, 215, 232, .35); outline-offset: 2px; }
+    button.primary { color: #041014; background: linear-gradient(135deg, var(--cyan), #74f0c2); border-color: transparent; font-weight: 900; }
+    button.warning { background: rgba(255, 200, 90, .12); border-color: rgba(255, 200, 90, .45); color: #ffe4a9; }
+    button.danger { background: rgba(255, 107, 122, .1); border-color: rgba(255, 107, 122, .42); color: #ffb1ba; }
+    button:disabled { opacity: .46; cursor: not-allowed; transform: none; }
+
+    .run-strip { margin-top: 13px; display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; border-radius: 13px; padding: 11px 13px; background: rgba(7, 16, 24, .7); border: 1px solid var(--line); }
+    .run-strip strong { color: var(--cyan); }
+    .run-strip small { color: var(--muted); }
+
+    .approach-card {
+      border-radius: 16px;
+      padding: 16px;
+      background: linear-gradient(135deg, rgba(66, 215, 232, .1), rgba(90, 141, 255, .07));
+      border: 1px solid rgba(66, 215, 232, .25);
+    }
+    .approach-card h3 { margin: 0 0 8px; font-size: 17px; }
+    .approach-card p { margin: 0; color: var(--muted); line-height: 1.6; }
+
+    .level-track { display: grid; grid-template-columns: repeat(7, minmax(110px, 1fr)); gap: 8px; margin-top: 15px; direction: ltr; }
+    .level-card {
+      direction: rtl;
+      min-height: 112px;
+      padding: 11px;
+      border-radius: 13px;
+      border: 1px solid var(--line);
+      background: rgba(7, 16, 24, .7);
+      position: relative;
+    }
+    .level-card::after { content: "←"; position: absolute; left: -9px; top: 44px; color: var(--cyan); font-weight: 900; z-index: 2; }
+    .level-card:last-child::after { display: none; }
+    .level-card.active { border-color: var(--cyan); box-shadow: inset 0 0 0 1px rgba(66, 215, 232, .35), 0 0 24px rgba(66, 215, 232, .08); }
+    .level-id { color: var(--cyan); font-weight: 900; font-size: 14px; }
+    .level-name { font-size: 12px; font-weight: 800; margin-top: 6px; }
+    .level-detail { color: var(--muted); font-size: 10px; line-height: 1.45; margin-top: 5px; }
+
+    .thread-rail { display: grid; gap: 8px; margin-top: 14px; }
+    .thread-chip { display: grid; grid-template-columns: 54px 1fr auto; gap: 10px; align-items: center; border-radius: 11px; padding: 9px 11px; border: 1px solid var(--line); background: rgba(7, 16, 24, .62); }
+    .thread-chip strong { color: var(--purple); }
+    .thread-chip span { font-size: 12px; }
+    .thread-chip small { color: var(--muted); font-size: 10px; }
+    .thread-chip.active { border-color: var(--purple); background: rgba(173, 140, 255, .09); }
+
+    .sim-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .sim-card { padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: rgba(7, 16, 24, .66); }
+    .sim-card .num { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 9px; background: rgba(66, 215, 232, .12); color: var(--cyan); font-weight: 900; }
+    .sim-card h3 { margin: 10px 0 5px; font-size: 14px; }
+    .sim-card p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.55; }
+    .sim-card.active { border-color: var(--cyan); }
+
+    .flow { display: flex; align-items: stretch; gap: 8px; overflow-x: auto; padding-bottom: 4px; direction: ltr; }
+    .flow-node { direction: rtl; min-width: 150px; flex: 1; border: 1px solid var(--line); border-radius: 13px; background: rgba(7, 16, 24, .7); padding: 12px; text-align: center; }
+    .flow-node strong { display: block; font-size: 13px; }
+    .flow-node small { color: var(--muted); line-height: 1.4; }
+    .flow-arrow { display: grid; place-items: center; color: var(--cyan); font-size: 22px; }
+
+    .gate-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 13px; }
+    .gate { border: 1px solid var(--line); border-radius: 13px; padding: 12px; background: rgba(7, 16, 24, .62); }
+    .gate-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .gate strong { font-size: 13px; }
+    .gate p { margin: 6px 0 0; color: var(--muted); font-size: 10px; line-height: 1.45; }
+    .status { display: inline-flex; align-items: center; justify-content: center; min-width: 66px; border-radius: 999px; padding: 4px 8px; font-size: 10px; font-weight: 900; border: 1px solid var(--line); }
+    .status.pass { color: #bff7d9; border-color: rgba(85, 219, 154, .5); background: rgba(85, 219, 154, .1); }
+    .status.fail, .status.blocked { color: #ffc2c8; border-color: rgba(255, 107, 122, .5); background: rgba(255, 107, 122, .1); }
+    .status.pending { color: #ffe1a3; border-color: rgba(255, 200, 90, .44); background: rgba(255, 200, 90, .08); }
+
+    .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .kpi { border: 1px solid var(--line); background: rgba(7, 16, 24, .7); border-radius: 14px; padding: 13px; }
+    .kpi-label { color: var(--muted); font-size: 11px; }
+    .kpi-value { font-size: 23px; font-weight: 900; margin-top: 5px; direction: ltr; text-align: right; }
+    .concept { display: inline-flex; margin-top: 5px; border: 1px solid rgba(255, 200, 90, .35); border-radius: 999px; padding: 2px 6px; color: var(--amber); font-size: 9px; font-weight: 900; direction: ltr; }
+
+    .charts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 11px; }
+    .chart-card { border: 1px solid var(--line); border-radius: 14px; padding: 12px; background: rgba(7, 16, 24, .72); min-width: 0; }
+    .chart-card h3 { margin: 0 0 7px; font-size: 12px; display: flex; justify-content: space-between; gap: 8px; }
+    .chart-card h3 span { color: var(--muted); font-size: 9px; direction: ltr; }
+    canvas { display: block; width: 100%; height: 190px; border-radius: 8px; background: #07131d; }
+
+    .matrix-wrap, .log-wrap { overflow: auto; border: 1px solid var(--line); border-radius: 13px; }
+    table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    th, td { padding: 9px 10px; border-bottom: 1px solid var(--line); border-left: 1px solid rgba(40, 65, 86, .55); text-align: right; vertical-align: top; white-space: nowrap; }
+    th { position: sticky; top: 0; z-index: 1; background: #142636; color: #cce1f1; }
+    tr:last-child td { border-bottom: 0; }
+    .matrix td { text-align: center; }
+    .matrix td:first-child, .matrix th:first-child { text-align: right; position: sticky; right: 0; background: #102130; z-index: 2; }
+    .matrix .r { color: var(--green); font-weight: 900; }
+    .matrix .p { color: var(--amber); font-weight: 900; }
+    .matrix .na { color: #5f7588; }
+
+    .log-tools { display: flex; flex-wrap: wrap; gap: 8px; }
+    .log-wrap { max-height: 390px; }
+    .log-wrap td { white-space: normal; min-width: 110px; line-height: 1.4; }
+    .log-wrap td:nth-child(-n+6) { white-space: nowrap; min-width: auto; }
+    .empty { text-align: center; color: var(--muted); padding: 32px !important; }
+
+    .legend { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 10px; color: var(--muted); font-size: 10px; }
+    .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-left: 5px; }
+
+    footer { color: var(--muted); text-align: center; margin-top: 18px; font-size: 11px; line-height: 1.6; }
+
+    @media (max-width: 1120px) {
+      .control-grid { grid-template-columns: repeat(3, 1fr); }
+      .level-track { grid-template-columns: repeat(4, 1fr); direction: rtl; }
+      .level-card::after { display: none; }
+      .charts { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 760px) {
+      .app-shell { width: min(100% - 16px, 1540px); padding-top: 8px; }
+      .hero, .section-grid { grid-template-columns: 1fr; }
+      .hero-badges { grid-template-columns: 1fr 1fr; min-width: 0; }
+      .control-grid, .sim-cards, .gate-grid, .kpis { grid-template-columns: 1fr 1fr; }
+      .level-track { grid-template-columns: 1fr 1fr; }
+      .run-strip { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 470px) {
+      .control-grid, .sim-cards, .gate-grid, .kpis, .hero-badges, .level-track { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="hero">
+      <div>
+        <div class="eyebrow">METALYTE PRO-MPRO · INTEGRATION TWIN · <a href="../" style="color:inherit">software twin</a> · <a href="../chemical-twin/" style="color:inherit">chemical twin</a> · <a href="../control-twin/" style="color:inherit">control twin</a> · <a href="../hub.html" style="color:inherit">all twins</a></div>
+        <h1>סימולטור תהליך וגישת האינטגרציה</h1>
+        <p>הדגמה אינטראקטיבית של השדרה ההיררכית L0–L3, החוטים התפקודיים T1–T7, שלושת סוגי הסימולטורים, סדר השערים והתגובה לתקלות. המודל נועד להסביר ולתרגל את התהליך — לא לאמת ביצועים.</p>
+      </div>
+      <div class="hero-badges" aria-label="פרטי בסיס">
+        <div class="badge"><strong>baseline</strong><br>IB-02-SIM-DEMO</div>
+        <div class="badge"><strong>alternative</strong><br>MPRO</div>
+        <div class="badge"><strong>evidence_class</strong><br>SIMULATED-DEMO</div>
+        <div class="badge"><strong>network</strong><br>OFFLINE / SELF-CONTAINED</div>
+      </div>
+    </header>
+
+    <div class="notice" role="note">
+      <strong>גבול ראיה מחייב:</strong> כל ערך הנדסי מספרי, ציר, סף או תוצאה בדף זה מסומן <span dir="ltr">concept/TBD</span>. אין לראות בהם תוצאת ניסוי, הוכחת דרישה או ראיית קבלה. מזהי רמה/חוט/ממשק, חותמות זמן ו־run_id הם מטא־נתונים ולא ערכי ביצוע.
+    </div>
+
+    <section class="panel controls" aria-labelledby="control-title">
+      <div class="panel-header">
+        <div><h2 id="control-title">לוח הפעלת ריצה</h2><p>בחרו רמה, חוט, סימולטור ותרחיש; T4 חסום עד מעבר T5 באותה רמה.</p></div>
+        <span class="status pending" id="engineStatus">מוכן</span>
+      </div>
+      <div class="panel-body">
+        <div class="control-grid">
+          <label class="field">רמת אינטגרציה<select id="levelSelect"></select></label>
+          <label class="field">חוט תפקודי<select id="threadSelect"></select></label>
+          <label class="field">סוג סימולטור<select id="simulatorSelect"></select></label>
+          <label class="field">תרחיש / הזרקת תקלה<select id="scenarioSelect"></select></label>
+          <label class="field">קצב הדגמה<select id="speedSelect"><option value="700">רגיל — concept/TBD</option><option value="350">מהיר — concept/TBD</option><option value="1100">איטי — concept/TBD</option></select></label>
+        </div>
+        <div class="switches">
+          <label class="switch"><input id="interfacesFrozen" type="checkbox" checked> הממשקים המשתתפים מוקפאים ומתועדים</label>
+          <label class="switch"><input id="protectionEnabled" type="checkbox" checked> תגובת ההגנה מופעלת בהדגמה</label>
+          <label class="switch"><input id="simulatorDocumented" type="checkbox" checked> מצב הדמה/חומרה אמיתית מתועד</label>
+        </div>
+        <div class="button-row">
+          <button class="primary" id="runButton">הפעל תרחיש</button>
+          <button id="stepButton">צעד יחיד</button>
+          <button class="warning" id="t5Button">הרץ T5 כתנאי מוקדם ל־T4</button>
+          <button id="pauseButton">השהה / המשך</button>
+          <button class="danger" id="resetButton">איפוס מלא</button>
+        </div>
+        <div class="run-strip" aria-live="polite">
+          <div><strong id="runIdText">run_id: טרם החלה ריצה</strong><br><small id="runMessage">בחרו תרחיש ולחצו “הפעל תרחיש”.</small></div>
+          <small id="tickText" dir="ltr">t=0 [concept/TBD]</small>
+        </div>
+      </div>
+    </section>
+
+    <div class="section-grid">
+      <section class="panel full" aria-labelledby="approach-title">
+        <div class="panel-header"><div><h2 id="approach-title">דיאגרמת הגישה: היברידית</h2><p>שדרה היררכית לבנייה ובידוד סיכון; חוטים תפקודיים לאימות מקצה לקצה.</p></div></div>
+        <div class="panel-body">
+          <div class="approach-card">
+            <h3>INT-01 · היררכיה + חוטים תפקודיים</h3>
+            <p>כל רמה נבנית מלמטה למעלה, אך נסגרת רק לאחר שהחוטים המשויכים לה הורצו. חלק חסר מוחלף בסימולטור ומתועד במפורש כ־SIMULATED-DEMO. אין העלאת הספק ב־T4 לפני שהתגובה לכשל ב־T5 הוכחה באותה רמה.</p>
+          </div>
+          <div class="level-track" id="levelTrack" aria-label="רמות האינטגרציה"></div>
+          <div class="thread-rail" id="threadRail" aria-label="חוטים תפקודיים"></div>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="sim-title">
+        <div class="panel-header"><div><h2 id="sim-title">שלושת סוגי הסימולטורים</h2><p>רכיב/מכלול, ממשק, סביבה/עומס.</p></div></div>
+        <div class="panel-body"><div class="sim-cards" id="simCards"></div></div>
+      </section>
+
+      <section class="panel" aria-labelledby="gate-title">
+        <div class="panel-header"><div><h2 id="gate-title">לוגיקת שערים</h2><p>GATE-IF פותח רמה; T5 קודם ל־T4; GATE-H2 ו־GATE-HV שומרים על גבול הבטיחות.</p></div></div>
+        <div class="panel-body">
+          <div class="flow" aria-label="זרימת שערים">
+            <div class="flow-node"><strong>GATE-IF</strong><small>ממשקים מוקפאים</small></div><div class="flow-arrow">→</div>
+            <div class="flow-node"><strong>T5</strong><small>הזרקת כשל ו־Safe Shutdown</small></div><div class="flow-arrow">→</div>
+            <div class="flow-node"><strong>GATE-H2 + GATE-HV</strong><small>גז/וונט ומתח גבוה</small></div><div class="flow-arrow">→</div>
+            <div class="flow-node"><strong>T4</strong><small>העברת אנרגיה מבוקרת</small></div><div class="flow-arrow">→</div>
+            <div class="flow-node"><strong>EXIT</strong><small>סקירת מוכנות וסגירת רמה</small></div>
+          </div>
+          <div class="gate-grid" id="gateGrid"></div>
+        </div>
+      </section>
+
+      <section class="panel full" aria-labelledby="matrix-title">
+        <div class="panel-header"><div><h2 id="matrix-title">מטריצת רמה × חוט</h2><p>R = ריצה מלאה; P = ריצה חלקית עם סימולטור; — = לא רלוונטי. רק L3 ללא סימולטור יכולה לתמוך בראיית מערכת עתידית.</p></div></div>
+        <div class="panel-body">
+          <div class="matrix-wrap"><table class="matrix" id="matrixTable"></table></div>
+          <div class="legend"><span><i class="dot" style="background:var(--green)"></i>R — ריצה מלאה</span><span><i class="dot" style="background:var(--amber)"></i>P — ריצה חלקית עם סימולטור</span><span><i class="dot" style="background:#5f7588"></i>— — לא רלוונטי</span></div>
+        </div>
+      </section>
+
+      <section class="panel full" aria-labelledby="telemetry-title">
+        <div class="panel-header"><div><h2 id="telemetry-title">טלמטריה דינמית — הדגמה בלבד</h2><p>הגרפים מגיבים לתרחיש ולתקלה. כל המספרים והצירים הם concept/TBD.</p></div><span class="status pending" id="scenarioState">IDLE</span></div>
+        <div class="panel-body">
+          <div class="kpis">
+            <div class="kpi"><div class="kpi-label">הספק מדומה</div><div class="kpi-value" id="powerKpi">0.00 kW</div><span class="concept">concept/TBD</span></div>
+            <div class="kpi"><div class="kpi-label">טמפרטורה מדומה</div><div class="kpi-value" id="tempKpi">0.00 °C</div><span class="concept">concept/TBD</span></div>
+            <div class="kpi"><div class="kpi-label">ריכוז H₂ מדומה</div><div class="kpi-value" id="h2Kpi">0.00 %vol</div><span class="concept">concept/TBD</span></div>
+            <div class="kpi"><div class="kpi-label">ספיקת וונט מדומה</div><div class="kpi-value" id="ventKpi">0.00 L/min</div><span class="concept">concept/TBD</span></div>
+          </div>
+          <div class="charts">
+            <div class="chart-card"><h3>הספק <span>kW · concept/TBD</span></h3><canvas id="powerChart" width="520" height="190" aria-label="גרף הספק מדומה"></canvas></div>
+            <div class="chart-card"><h3>טמפרטורה <span>°C · concept/TBD</span></h3><canvas id="tempChart" width="520" height="190" aria-label="גרף טמפרטורה מדומה"></canvas></div>
+            <div class="chart-card"><h3>H₂ / וונט <span>%vol · concept/TBD</span></h3><canvas id="h2Chart" width="520" height="190" aria-label="גרף ריכוז מימן מדומה"></canvas></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel full" aria-labelledby="log-title">
+        <div class="panel-header">
+          <div><h2 id="log-title">Event Log מפורט</h2><p>כל שורה כוללת עקיבות לריצה, בסיס, רמה, חוט, ממשקים, expected/actual/result/gate וגבול הראיה.</p></div>
+          <div class="log-tools"><button id="csvButton">ייצוא CSV</button><button id="jsonButton">ייצוא JSON</button></div>
+        </div>
+        <div class="panel-body">
+          <div class="log-wrap"><table id="logTable"><thead><tr><th>timestamp_iso</th><th>run_id</th><th>baseline</th><th>alternative</th><th>level</th><th>thread</th><th>simulator_type</th><th>integration_group_ids</th><th>icd_interface_ids</th><th>fault_id</th><th>evidence_class</th><th>expected</th><th>actual</th><th>result</th><th>gate</th><th>numeric_status</th></tr></thead><tbody id="logBody"><tr><td class="empty" colspan="16">טרם נוצרו אירועים.</td></tr></tbody></table></div>
+        </div>
+      </section>
+    </div>
+
+    <footer>MPRO Integration Simulator · קובץ מקומי ללא תלות רשת · baseline=IB-02-SIM-DEMO · evidence_class=SIMULATED-DEMO · כל ערכי הביצוע concept/TBD</footer>
+  </main>
+
+  <script>
+  "use strict";
+
+  const BASELINE = "IB-02-SIM-DEMO";
+  const ALTERNATIVE = "MPRO";
+  const EVIDENCE_CLASS = "SIMULATED-DEMO";
+  const NUMERIC_STATUS = "concept/TBD — NOT TEST EVIDENCE";
+
+  const icdInterfaceMap = {
+    "IG-01": ["IF-100-400-PWR-01", "IF-100-600-DAT-01"],
+    "IG-02": ["IF-100-200-WTR-01", "IF-200-600-CTL-01", "IF-200-600-DAT-01"],
+    "IG-03": ["IF-100-300-AIR-01", "IF-100-300-GAS-01", "IF-100-300-THM-01", "IF-300-ENV-GAS-01"],
+    "IG-04": ["IF-100-600-DAT-01", "IF-200-600-CTL-01", "IF-200-600-DAT-01", "IF-300-600-CTL-01", "IF-300-600-DAT-01", "IF-400-600-CTL-01", "IF-400-600-SAF-01"],
+    "IG-05": ["IF-400-500-PWR-01", "IF-500-600-HLC-01", "IF-500-600-SAF-01", "IF-500-EV-HLC-01", "IF-500-EV-MEC-01", "IF-500-EV-PWR-01"],
+    "IG-06": ["IF-200-USER-HMI-01", "IF-500-USER-HMI-01", "IF-600-700-HMI-01", "IF-600-700-PWR-01", "IF-600-700-SAF-01", "IF-700-USER-HMI-01", "IF-600-SERVICE-DAT-01", "IF-900-SERVICE-SRV-01"],
+    "IG-07": ["IF-500-800-MEC-01", "IF-500-800-MEC-02", "IF-800-900-MEC-01", "IF-800-ENV-MEC-01", "IF-900-VEH-MEC-01"]
+  };
+
+  const levels = [
+    { id: "L0", name: "רכיב ומכלול", detail: "תא, קתודה, מארז, מים, DC/DC, HV, בקר, HMI ואומביליקל", groups: ["IG-01", "IG-02", "IG-03", "IG-04"] },
+    { id: "L1a", name: "מחסנית מלאה + מים", detail: "Ready→Selected/Activated→Active Power→Derated/Fault→Purge/Cooldown→Spent→Service Required; בענף כשל: Safe Shutdown לפני Purge/Cooldown", groups: ["IG-01", "IG-02", "IG-03"] },
+    { id: "L1b", name: "תרמי + ונטילציה", detail: "נתיב חום וגז, חיישן H₂ ובידוד רטוב/יבש", groups: ["IG-03", "IG-04"] },
+    { id: "L1c", name: "שרשרת הספק", detail: "מקור, DC/DC, הגנות HV וממשק CCS2/DC", groups: ["IG-01", "IG-04", "IG-05"] },
+    { id: "L1d", name: "בקרה, תוכנה ו־HMI", detail: "מכונת מצבים, Self-Test, Handshake, Shutdown ולוגים", groups: ["IG-04", "IG-05", "IG-06"] },
+    { id: "L2", name: "מכלול מכני ואריזה", detail: "קיבוע, פריסה, שירות, החלפה, רטט והלם", groups: ["IG-06", "IG-07"] },
+    { id: "L3", name: "מערכת מלאה", detail: "רצף חילוץ עצמי מקצה לקצה בסביבת רכב", groups: ["IG-01", "IG-02", "IG-03", "IG-04", "IG-05", "IG-06", "IG-07"] }
+  ];
+
+  const threads = [
+    { id: "T1", name: "Self-Test ומעבר ל־Ready", proof: "זיהוי כשלים ומניעת Ready עם כשל פתוח" },
+    { id: "T2", name: "הפעלה במים: Ready → Active", proof: "הפעלה חד־כיוונית, זמן הגעה ומצב תגובה" },
+    { id: "T3", name: "חיבור, HVIL ו־Handshake", proof: "אין מתח לפני נעילה ואישור; Pilot מקדים ניתוק" },
+    { id: "T4", name: "העברת אנרגיה מבוקרת", proof: "מסלול אנרגיה מלא ללא חריגה; חסום עד T5" },
+    { id: "T5", name: "תקלה ו־Safe Shutdown", proof: "כשל גז/תרמי/HV/תקשורת מוביל למצב בטוח" },
+    { id: "T6", name: "Purge, Cooldown וניתוק", proof: "ירידת סיכון לפני שחרור הנעילה" },
+    { id: "T7", name: "החלפת מחסנית ושירות", proof: "מניעת Spent, עקיבות ומעבר Service Required" }
+  ];
+
+  const simulators = [
+    { id: "COMPONENT_ASSEMBLY", name: "סימולטור רכיב / מכלול", detail: "מחסנית־דמה תרמית, מחמם, זרימת גז אינרטי, HIL חיישנים ומודל מכלול. מחליף רכיב שאינו זמין כדי לבודד סיכון." },
+    { id: "INTERFACE", name: "סימולטור ממשק", detail: "ספק DC מתוכנת, אמולטור CCS2, אותות Pilot/HVIL ו־Handshake. בודק חוזה ממשק בלי לחבר מערכת מלאה." },
+    { id: "ENVIRONMENT_LOAD", name: "סימולטור סביבה / עומס", detail: "עומס אלקטרוני, אמולטור רכב, תנאי חום/אוורור ודמה מסה/CG. מייצר סביבה מבוקרת וחזרתית." }
+  ];
+
+  const scenarios = [
+    { id: "nominal", name: "תרחיש נומינלי", description: "רצף תקין מהכנה ועד סיום מבוקר", defaultSimulator: "ENVIRONMENT_LOAD" },
+    { id: "vent_blockage_h2", name: "חסימת וונט / עליית H₂", description: "הפחתת ספיקה, זיהוי H₂, בידוד ו־Purge", defaultSimulator: "COMPONENT_ASSEMBLY" },
+    { id: "hvil_open", name: "HVIL open", description: "פתיחת לולאת האינטרלוק ובידוד נתיב HV", defaultSimulator: "INTERFACE" },
+    { id: "handshake_timeout", name: "Handshake timeout", description: "אי־השלמת תקשורת ומניעת העברת אנרגיה", defaultSimulator: "INTERFACE" },
+    { id: "overtemp", name: "Overtemperature", description: "Derating ולאחריו Safe Shutdown", defaultSimulator: "COMPONENT_ASSEMBLY" },
+    { id: "water_flow_fault", name: "Water-flow fault", description: "ספיקה חסרה/חריגה ועצירת אקטיבציה", defaultSimulator: "COMPONENT_ASSEMBLY" },
+    { id: "sensor_dropout", name: "Sensor dropout", description: "אות לא תקף, מעבר לברירת מחדל בטוחה ולוג", defaultSimulator: "INTERFACE" },
+    { id: "overcurrent", name: "Overcurrent", description: "הגבלת זרם, פתיחת קונטקטור ובידוד", defaultSimulator: "ENVIRONMENT_LOAD" }
+  ];
+
+  const integrationMatrix = {
+    "L0":  ["P", "—", "—", "—", "P", "—", "—"],
+    "L1a": ["P", "R", "—", "P", "P", "P", "—"],
+    "L1b": ["—", "P", "—", "—", "R", "R", "—"],
+    "L1c": ["P", "—", "R", "R", "R", "P", "—"],
+    "L1d": ["R", "P", "P", "P", "R", "P", "P"],
+    "L2":  ["—", "—", "P", "—", "—", "P", "R"],
+    "L3":  ["R", "R", "R", "R", "R", "R", "R"]
+  };
+
+  const els = {
+    level: document.getElementById("levelSelect"), thread: document.getElementById("threadSelect"), simulator: document.getElementById("simulatorSelect"), scenario: document.getElementById("scenarioSelect"), speed: document.getElementById("speedSelect"),
+    interfacesFrozen: document.getElementById("interfacesFrozen"), protectionEnabled: document.getElementById("protectionEnabled"), simulatorDocumented: document.getElementById("simulatorDocumented"),
+    engineStatus: document.getElementById("engineStatus"), scenarioState: document.getElementById("scenarioState"), runIdText: document.getElementById("runIdText"), runMessage: document.getElementById("runMessage"), tickText: document.getElementById("tickText"),
+    levelTrack: document.getElementById("levelTrack"), threadRail: document.getElementById("threadRail"), simCards: document.getElementById("simCards"), gateGrid: document.getElementById("gateGrid"), matrix: document.getElementById("matrixTable"), logBody: document.getElementById("logBody"),
+    powerKpi: document.getElementById("powerKpi"), tempKpi: document.getElementById("tempKpi"), h2Kpi: document.getElementById("h2Kpi"), ventKpi: document.getElementById("ventKpi")
+  };
+
+  const state = {
+    timer: null, paused: false, tick: 0, maxTicks: 14, runId: "", logs: [], samples: { power: [], temp: [], h2: [], vent: [] },
+    t5Passed: Object.fromEntries(levels.map(level => [level.id, false])),
+    gateOutcomes: { "GATE-H2": "PENDING", "GATE-HV": "PENDING" },
+    faultLogged: false, responseLogged: false, running: false
+  };
+
+  function option(value, label) {
+    const node = document.createElement("option");
+    node.value = value; node.textContent = label; return node;
+  }
+
+  function populateControls() {
+    levels.forEach(level => els.level.append(option(level.id, `${level.id} — ${level.name}`)));
+    threads.forEach(thread => els.thread.append(option(thread.id, `${thread.id} — ${thread.name}`)));
+    simulators.forEach(sim => els.simulator.append(option(sim.id, sim.name)));
+    scenarios.forEach(scenario => els.scenario.append(option(scenario.id, scenario.name)));
+    els.level.value = "L1d";
+    els.thread.value = "T5";
+    els.simulator.value = "INTERFACE";
+  }
+
+  function renderApproach() {
+    els.levelTrack.replaceChildren(...levels.map(level => {
+      const card = document.createElement("article");
+      card.className = `level-card${level.id === els.level.value ? " active" : ""}`;
+      card.innerHTML = `<div class="level-id">${level.id}</div><div class="level-name">${level.name}</div><div class="level-detail">${level.detail}</div>`;
+      return card;
+    }));
+    els.threadRail.replaceChildren(...threads.map(thread => {
+      const chip = document.createElement("div");
+      chip.className = `thread-chip${thread.id === els.thread.value ? " active" : ""}`;
+      chip.innerHTML = `<strong>${thread.id}</strong><span>${thread.name}</span><small>${thread.proof}</small>`;
+      return chip;
+    }));
+  }
+
+  function renderSimulators() {
+    els.simCards.replaceChildren(...simulators.map((sim, index) => {
+      const card = document.createElement("article");
+      card.className = `sim-card${sim.id === els.simulator.value ? " active" : ""}`;
+      card.innerHTML = `<div class="num">${index + 1}</div><h3>${sim.name}</h3><p>${sim.detail}</p>`;
+      return card;
+    }));
+  }
+
+  function renderMatrix() {
+    const thead = document.createElement("thead");
+    const header = document.createElement("tr");
+    ["רמה", ...threads.map(t => t.id)].forEach(value => { const th = document.createElement("th"); th.textContent = value; header.append(th); });
+    thead.append(header);
+    const tbody = document.createElement("tbody");
+    levels.forEach(level => {
+      const tr = document.createElement("tr");
+      const label = document.createElement("td"); label.textContent = `${level.id} · ${level.name}`; tr.append(label);
+      integrationMatrix[level.id].forEach(value => { const td = document.createElement("td"); td.textContent = value; td.className = value === "R" ? "r" : value === "P" ? "p" : "na"; tr.append(td); });
+      tbody.append(tr);
+    });
+    els.matrix.replaceChildren(thead, tbody);
+  }
+
+  function gateDescription(id) {
+    return {
+      "GATE-IF": "כל קבוצות IG-01..IG-07 המשתתפות ומזהי ה־ICD הקפואים הממופים אליהן מוקפאים לפני פתיחת הריצה.",
+      "GATE-H2": "זיהוי ריכוז/חסימת וונט ותגובה בטוחה; הספים עצמם concept/TBD.",
+      "GATE-HV": "HVIL, בידוד, קונטקטורים ו־Handshake מונעים מתח לא מורשה.",
+      "T5→T4": "T4 אינו מורשה לפני PASS של T5 באותה רמה."
+    }[id];
+  }
+
+  function getGateStatus(id) {
+    if (id === "GATE-IF") return els.interfacesFrozen.checked ? "PASS" : "FAIL";
+    if (id === "T5→T4") return state.t5Passed[els.level.value] ? "PASS" : "BLOCKED";
+    return state.gateOutcomes[id];
+  }
+
+  function renderGates() {
+    els.gateGrid.replaceChildren(...["GATE-IF", "GATE-H2", "GATE-HV", "T5→T4"].map(id => {
+      const status = getGateStatus(id);
+      const card = document.createElement("article"); card.className = "gate";
+      card.innerHTML = `<div class="gate-top"><strong>${id}</strong><span class="status ${status.toLowerCase()}">${status}</span></div><p>${gateDescription(id)}</p>`;
+      return card;
+    }));
+  }
+
+  class LineChart {
+    constructor(canvas, color, maxValue) { this.canvas = canvas; this.ctx = canvas.getContext("2d"); this.color = color; this.maxValue = maxValue; }
+    draw(values) {
+      const c = this.canvas, ctx = this.ctx, w = c.width, h = c.height, pad = 28;
+      ctx.clearRect(0, 0, w, h); ctx.fillStyle = "#07131d"; ctx.fillRect(0, 0, w, h);
+      ctx.strokeStyle = "rgba(157,179,198,.16)"; ctx.lineWidth = 1;
+      for (let i = 0; i <= 4; i++) { const y = pad + (h - pad * 2) * i / 4; ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(w - pad, y); ctx.stroke(); }
+      ctx.fillStyle = "rgba(157,179,198,.72)"; ctx.font = "9px Segoe UI"; ctx.textAlign = "left"; ctx.fillText("concept/TBD", 7, 13);
+      if (!values.length) return;
+      const max = Math.max(this.maxValue, ...values.map(v => Number.isFinite(v) ? v : 0), .01);
+      ctx.strokeStyle = this.color; ctx.lineWidth = 2.5; ctx.beginPath();
+      values.forEach((value, index) => { const x = pad + (w - pad * 2) * (values.length === 1 ? 0 : index / (Math.max(values.length - 1, 13))); const y = h - pad - (Math.max(0, value) / max) * (h - pad * 2); index ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+      ctx.stroke();
+      const last = values[values.length - 1], x = pad + (w - pad * 2) * ((values.length - 1) / Math.max(13, values.length - 1)), y = h - pad - (Math.max(0, last) / max) * (h - pad * 2);
+      ctx.fillStyle = this.color; ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
+  const charts = {
+    power: new LineChart(document.getElementById("powerChart"), "#42d7e8", 13),
+    temp: new LineChart(document.getElementById("tempChart"), "#ff6b7a", 100),
+    h2: new LineChart(document.getElementById("h2Chart"), "#ffc85a", 2)
+  };
+
+  function setStatus(element, text, type) { element.textContent = text; element.className = `status ${type}`; }
+
+  function currentLevel() { return levels.find(level => level.id === els.level.value); }
+  function currentScenario() { return scenarios.find(scenario => scenario.id === els.scenario.value); }
+  function currentSimulator() { return simulators.find(sim => sim.id === els.simulator.value); }
+
+  function makeRunId() {
+    const stamp = new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14);
+    const salt = Math.random().toString(16).slice(2, 6).toUpperCase();
+    return `MPRO-${stamp}-${salt}`;
+  }
+
+  function mappedIcdIds(groups = currentLevel().groups) {
+    return [...new Set(groups.flatMap(groupId => icdInterfaceMap[groupId] || []))];
+  }
+
+  function appendLog({ expected, actual, result, gate = "N/A", faultId, integrationGroups, icdInterfaceIds }) {
+    const groups = integrationGroups || currentLevel().groups;
+    const entry = {
+      timestamp_iso: new Date().toISOString(), run_id: state.runId || "NO-RUN", baseline: BASELINE, alternative: ALTERNATIVE,
+      level: els.level.value, thread: els.thread.value, simulator_type: els.simulator.value,
+      integration_group_ids: groups.join("|"), icd_interface_ids: (icdInterfaceIds || mappedIcdIds(groups)).join("|"), fault_id: faultId || els.scenario.value,
+      evidence_class: EVIDENCE_CLASS, expected, actual, result, gate, numeric_status: NUMERIC_STATUS
+    };
+    state.logs.push(entry); renderLog();
+  }
+
+  function renderLog() {
+    if (!state.logs.length) { els.logBody.innerHTML = '<tr><td class="empty" colspan="16">טרם נוצרו אירועים.</td></tr>'; return; }
+    const fields = ["timestamp_iso", "run_id", "baseline", "alternative", "level", "thread", "simulator_type", "integration_group_ids", "icd_interface_ids", "fault_id", "evidence_class", "expected", "actual", "result", "gate", "numeric_status"];
+    const rows = state.logs.slice().reverse().map(entry => {
+      const tr = document.createElement("tr");
+      fields.forEach(field => { const td = document.createElement("td"); td.textContent = entry[field]; if (field === "result") td.style.color = entry[field] === "PASS" ? "var(--green)" : entry[field] === "FAIL" || entry[field] === "BLOCKED" ? "var(--red)" : "var(--amber)"; tr.append(td); });
+      return tr;
+    });
+    els.logBody.replaceChildren(...rows);
+  }
+
+  function telemetryAt(tick) {
+    const scenario = els.scenario.value;
+    const protection = els.protectionEnabled.checked;
+    const ramp = Math.min(1, Math.max(0, (tick - 2) / 4));
+    const cooldown = tick > 10 ? Math.max(0, 1 - (tick - 10) / 4) : 1;
+    const levelScale = { L0: .18, L1a: .48, L1b: .14, L1c: .82, L1d: .3, L2: .16, L3: 1 }[els.level.value];
+    let power = 10 * levelScale * ramp * cooldown;
+    let temp = 24 + 34 * ramp * levelScale;
+    let h2 = .08 + .34 * ramp * (els.level.value === "L1b" || els.level.value === "L3" ? 1 : .45);
+    let vent = 2.4 * ramp;
+    let phase = tick < 2 ? "SELF_TEST" : tick < 4 ? "INTERFACE_CHECK" : tick < 10 ? "ACTIVE" : "PURGE_COOLDOWN";
+
+    if (scenario === "vent_blockage_h2" && tick >= 5) {
+      vent = Math.max(.08, 1.1 - (tick - 5) * .18); h2 += (tick - 4) * .26; temp += (tick - 4) * 2.1;
+      if (protection && tick >= 7) { power *= Math.max(0, 1 - (tick - 6) * .46); phase = "SAFE_SHUTDOWN_H2"; vent = 3.2; h2 = Math.max(.24, h2 - (tick - 7) * .32); }
+    }
+    if (scenario === "hvil_open" && tick >= 5) {
+      if (protection) { power = tick >= 7 ? 0 : power * .18; phase = "HV_ISOLATED"; } else { phase = "UNSAFE_HV_PATH"; }
+    }
+    if (scenario === "handshake_timeout" && tick >= 5) {
+      if (protection) { power = 0; phase = "HANDSHAKE_INHIBIT"; } else { phase = "UNAUTHORIZED_ENABLE"; }
+    }
+    if (scenario === "overtemp" && tick >= 5) {
+      temp += (tick - 4) * 7.2;
+      if (protection && tick >= 7) { power *= Math.max(0, 1 - (tick - 6) * .38); phase = "THERMAL_DERATE"; temp -= (tick - 7) * 4.4; }
+    }
+    if (scenario === "water_flow_fault" && tick >= 5) {
+      power *= Math.max(0, 1 - (tick - 4) * .22); h2 *= .45; vent *= .55; phase = protection ? "ACTIVATION_ABORT" : "UNSTABLE_REACTION";
+    }
+    if (scenario === "sensor_dropout" && tick >= 5) {
+      if (protection) { power *= tick >= 7 ? .12 : .62; phase = "SENSOR_FAILSAFE"; } else { temp += 13; phase = "BLIND_OPERATION"; }
+    }
+    if (scenario === "overcurrent" && tick >= 5) {
+      power *= tick === 5 ? 1.38 : protection ? Math.max(0, 1 - (tick - 5) * .55) : 1.34; phase = protection && tick >= 7 ? "OVERCURRENT_TRIP" : "OVERCURRENT";
+    }
+
+    return { power: Math.max(0, power), temp: Math.max(0, temp), h2: Math.max(0, h2), vent: Math.max(0, vent), phase };
+  }
+
+  function gateForScenario() {
+    return ["vent_blockage_h2", "water_flow_fault"].includes(els.scenario.value) ? "GATE-H2" : ["hvil_open", "handshake_timeout", "overcurrent", "sensor_dropout"].includes(els.scenario.value) ? "GATE-HV" : "GATE-H2|GATE-HV";
+  }
+
+  function updateTelemetry(sample) {
+    state.samples.power.push(sample.power); state.samples.temp.push(sample.temp); state.samples.h2.push(sample.h2); state.samples.vent.push(sample.vent);
+    els.powerKpi.textContent = `${sample.power.toFixed(2)} kW`;
+    els.tempKpi.textContent = `${sample.temp.toFixed(2)} °C`;
+    els.h2Kpi.textContent = `${sample.h2.toFixed(2)} %vol`;
+    els.ventKpi.textContent = `${sample.vent.toFixed(2)} L/min`;
+    charts.power.draw(state.samples.power); charts.temp.draw(state.samples.temp); charts.h2.draw(state.samples.h2);
+    els.tickText.textContent = `t=${state.tick} [concept/TBD]`;
+    els.runMessage.textContent = `${sample.phase} · ${currentScenario().description} · כל התוצאות concept/TBD`;
+  }
+
+  function beginRun(forcedThread, autoRun = true) {
+    stopTimer();
+    if (forcedThread) els.thread.value = forcedThread;
+    renderApproach();
+    if (!els.interfacesFrozen.checked) {
+      state.runId = makeRunId(); els.runIdText.textContent = `run_id: ${state.runId}`;
+      appendLog({ expected: "הממשקים המשתתפים מוקפאים לפני פתיחת הרמה", actual: "ממשק לא מוקפא או לא מתועד", result: "BLOCKED", gate: "GATE-IF" });
+      setStatus(els.engineStatus, "חסום", "blocked"); els.runMessage.textContent = "GATE-IF נכשל: לא ניתן לפתוח ריצה."; renderGates(); return;
+    }
+    if (els.thread.value === "T4" && !state.t5Passed[els.level.value]) {
+      state.runId = makeRunId(); els.runIdText.textContent = `run_id: ${state.runId}`;
+      appendLog({ expected: "PASS של T5 באותה רמה לפני T4", actual: "T5 טרם עבר", result: "BLOCKED", gate: "T5→T4" });
+      setStatus(els.engineStatus, "T4 חסום", "blocked"); els.runMessage.textContent = "כלל INT-04: יש להריץ T5 לפני העלאת הספק ב־T4."; renderGates(); return;
+    }
+    state.runId = makeRunId(); state.tick = 0; state.samples = { power: [], temp: [], h2: [], vent: [] }; state.faultLogged = false; state.responseLogged = false; state.running = true; state.paused = false;
+    els.runIdText.textContent = `run_id: ${state.runId}`;
+    setStatus(els.engineStatus, "רץ", "pass"); setStatus(els.scenarioState, "RUNNING", "pass");
+    appendLog({ expected: "GATE-IF PASS: קבוצות IG ומזהי ICD ממופים מוקפאים לפני תחילת אינטגרציה", actual: `integration_groups=${currentLevel().groups.join("|")}; frozen_icd_ids=${mappedIcdIds().join("|")}`, result: "PASS", gate: "GATE-IF" });
+    appendLog({ expected: currentScenario().description, actual: `ריצה נפתחה עם ${currentSimulator().name}`, result: "RUNNING", gate: "N/A" });
+    stepRun();
+    if (autoRun && state.running) {
+      const delay = Number(els.speed.value);
+      state.timer = setInterval(stepRun, delay);
+    }
+  }
+
+  function stepRun() {
+    if (!state.running) {
+      state.runId = state.runId || makeRunId(); state.running = true; els.runIdText.textContent = `run_id: ${state.runId}`;
+    }
+    if (state.paused) return;
+    const sample = telemetryAt(state.tick); updateTelemetry(sample);
+    if (state.tick === 2) {
+      appendLog({ expected: "תיעוד ברור של חומרה אמיתית מול סימולטור", actual: els.simulatorDocumented.checked ? `${currentSimulator().name}; evidence=${EVIDENCE_CLASS}` : "סטטוס הסימולטור לא תועד", result: els.simulatorDocumented.checked ? "PASS" : "FAIL", gate: "GATE-IF" });
+    }
+    if (state.tick === 5 && els.scenario.value !== "nominal" && !state.faultLogged) {
+      state.faultLogged = true;
+      appendLog({ expected: `הזרקת ${els.scenario.value} בנקודת הזרקה מבוקרת`, actual: `fault_injected=${els.scenario.value}; telemetry=${sample.phase}`, result: "INJECTED", gate: gateForScenario() });
+    }
+    if (state.tick === 7 && !state.responseLogged) {
+      state.responseLogged = true;
+      const protectedResponse = els.protectionEnabled.checked || els.scenario.value === "nominal";
+      appendLog({ expected: "המערכת עוברת למצב בטוח ומונעת המשך בלתי מורשה", actual: protectedResponse ? `תגובה מדומה: ${sample.phase}; קונטקטורים/הרשאות למצב בטוח` : `תגובה מדומה מושבתת: ${sample.phase}`, result: protectedResponse ? "PASS" : "FAIL", gate: gateForScenario() });
+    }
+    state.tick += 1;
+    if (state.tick > state.maxTicks) finishRun();
+  }
+
+  function finishRun() {
+    stopTimer(); state.running = false;
+    const protectedResponse = els.protectionEnabled.checked || els.scenario.value === "nominal";
+    const documented = els.simulatorDocumented.checked;
+    const passed = protectedResponse && documented;
+    const gate = gateForScenario();
+    if (gate.includes("GATE-H2")) state.gateOutcomes["GATE-H2"] = passed ? "PASS" : "FAIL";
+    if (gate.includes("GATE-HV")) state.gateOutcomes["GATE-HV"] = passed ? "PASS" : "FAIL";
+    if (els.thread.value === "T5") state.t5Passed[els.level.value] = passed;
+    appendLog({ expected: "קריטריון יציאה: חוט הורץ, אי־התאמות תועדו, אין כשל בטיחותי פתוח ומצב סימולטור ידוע", actual: passed ? "ריצת הדגמה נסגרה; SIMULATED-DEMO בלבד" : "קריטריון יציאה לא הושלם", result: passed ? "PASS" : "FAIL", gate: els.thread.value === "T5" ? `${gate}|T5→T4` : gate });
+    setStatus(els.engineStatus, passed ? "הושלם" : "נכשל", passed ? "pass" : "fail");
+    setStatus(els.scenarioState, passed ? "COMPLETE" : "FAULT", passed ? "pass" : "fail");
+    els.runMessage.textContent = passed ? "הריצה הושלמה כראיית SIMULATED-DEMO בלבד." : "הריצה נכשלה; בדקו את תגובת ההגנה ותיעוד הסימולטור.";
+    renderGates(); renderApproach();
+  }
+
+  function stopTimer() { if (state.timer) clearInterval(state.timer); state.timer = null; }
+
+  function resetAll() {
+    stopTimer(); state.paused = false; state.tick = 0; state.runId = ""; state.logs = []; state.samples = { power: [], temp: [], h2: [], vent: [] }; state.t5Passed = Object.fromEntries(levels.map(level => [level.id, false])); state.gateOutcomes = { "GATE-H2": "PENDING", "GATE-HV": "PENDING" }; state.faultLogged = false; state.responseLogged = false; state.running = false;
+    els.powerKpi.textContent = "0.00 kW"; els.tempKpi.textContent = "0.00 °C"; els.h2Kpi.textContent = "0.00 %vol"; els.ventKpi.textContent = "0.00 L/min";
+    charts.power.draw([]); charts.temp.draw([]); charts.h2.draw([]);
+    els.runIdText.textContent = "run_id: טרם החלה ריצה"; els.runMessage.textContent = "בחרו תרחיש ולחצו “הפעל תרחיש”."; els.tickText.textContent = "t=0 [concept/TBD]";
+    setStatus(els.engineStatus, "מוכן", "pending"); setStatus(els.scenarioState, "IDLE", "pending"); renderLog(); renderGates(); renderApproach();
+  }
+
+  function csvEscape(value) { const text = String(value ?? ""); return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text; }
+  function download(name, content, mime) {
+    const blob = new Blob([content], { type: mime }); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = name; document.body.append(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 0);
+  }
+  function exportCsv() {
+    const fields = ["timestamp_iso", "run_id", "baseline", "alternative", "level", "thread", "simulator_type", "integration_group_ids", "icd_interface_ids", "fault_id", "evidence_class", "expected", "actual", "result", "gate", "numeric_status"];
+    const rows = [fields.join(","), ...state.logs.map(entry => fields.map(field => csvEscape(entry[field])).join(","))];
+    download("Metalyte_Integration_Log_Export_IB-02.csv", "\ufeff" + rows.join("\r\n"), "text/csv;charset=utf-8");
+  }
+  function exportJson() {
+    download("Metalyte_Integration_Log_Export_IB-02.json", JSON.stringify({ schema: "MPRO-INTEGRATION-LOG-IB-02", baseline: BASELINE, alternative: ALTERNATIVE, evidence_class: EVIDENCE_CLASS, numeric_status: NUMERIC_STATUS, exported_at: new Date().toISOString(), events: state.logs }, null, 2), "application/json;charset=utf-8");
+  }
+
+  document.getElementById("runButton").addEventListener("click", () => beginRun());
+  document.getElementById("stepButton").addEventListener("click", () => { stopTimer(); state.paused = false; if (!state.runId || !state.running) beginRun(undefined, false); else stepRun(); });
+  document.getElementById("t5Button").addEventListener("click", () => beginRun("T5"));
+  document.getElementById("pauseButton").addEventListener("click", () => { state.paused = !state.paused; setStatus(els.engineStatus, state.paused ? "מושהה" : "רץ", state.paused ? "pending" : "pass"); });
+  document.getElementById("resetButton").addEventListener("click", resetAll);
+  document.getElementById("csvButton").addEventListener("click", exportCsv);
+  document.getElementById("jsonButton").addEventListener("click", exportJson);
+  els.level.addEventListener("change", () => { stopTimer(); state.running = false; renderApproach(); renderGates(); });
+  els.thread.addEventListener("change", renderApproach);
+  els.simulator.addEventListener("change", renderSimulators);
+  els.scenario.addEventListener("change", () => { const scenario = currentScenario(); els.simulator.value = scenario.defaultSimulator; renderSimulators(); });
+  els.interfacesFrozen.addEventListener("change", renderGates);
+
+  populateControls(); renderApproach(); renderSimulators(); renderMatrix(); renderGates(); charts.power.draw([]); charts.temp.draw([]); charts.h2.draw([]);
+  </script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+{
+ "name": "[9.1] Only defined wake sources; D-BIT then back to sleep",
+ "config2_changes": "9.1, 9.2",
+ "disclaimer": "Academic simulation; all thresholds and timings are placeholders.",
+ "steps": [
+  [
+   "wake",
+   {
+    "source": "CAN_NOISE"
+   }
+  ],
+  [
+   "expect",
+   {
+    "state": "SYSTEM_STANDBY",
+    "log_contains": "undefined source"
+   }
+  ],
+  [
+   "wake",
+   {
+    "source": "DBIT_TIMER"
+   }
+  ],
+  [
+   "run_storage_check",
+   {
+    "lic_drop_mv_per_day": 12.0
+   }
+  ],
+  [
+   "expect",
+   {
+    "state": "SYSTEM_STANDBY",
+    "log_contains": "'next_interval_h': 84.0",
+    "actuators": {
+     "aux_domains_on": false
+    }
+   }
+  ],
+  [
+   "set",
+   {
+    "ambient_c": -25.0,
+    "lic_voltage_v": 3.05
+   }
+  ],
+  [
+   "wake",
+   {
+    "source": "USER_WAKE"
+   }
+  ],
+  [
+   "run_self_test"
+  ],
+  [
+   "expect",
+   {
+    "state": "ENVIRONMENT_CHECK"
+   }
+  ]
+ ]
+}

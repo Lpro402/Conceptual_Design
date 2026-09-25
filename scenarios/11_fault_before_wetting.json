@@ -1,0 +1,54 @@
+{
+ "name": "A critical fault before water admission locks without wetting",
+ "config2_changes": "safety",
+ "disclaimer": "Academic simulation; all thresholds and timings are placeholders.",
+ "steps": [
+  [
+   "wake"
+  ],
+  [
+   "run_self_test"
+  ],
+  [
+   "answer_environment",
+   {
+    "enclosed": false
+   }
+  ],
+  [
+   "confirm_deployment",
+   {
+    "diffuser_outside_confirmed": true
+   }
+  ],
+  [
+   "verify_connection"
+  ],
+  [
+   "handshake"
+  ],
+  [
+   "pour_water",
+   {
+    "liters": 1.8
+   }
+  ],
+  [
+   "inject_fault",
+   {
+    "fault": "E_STOP"
+   }
+  ],
+  [
+   "expect",
+   {
+    "state": "FAULT_LOCKED",
+    "cartridges": [
+     "DRY_READY",
+     "DRY_READY",
+     "DRY_READY"
+    ]
+   }
+  ]
+ ]
+}

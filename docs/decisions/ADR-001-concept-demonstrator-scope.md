@@ -1,6 +1,6 @@
 # ADR-001: Limit the implementation to a software concept demonstrator
 
-- **Status:** Accepted
+- **Status:** Superseded by ADR-002
 - **Date:** 2026-07-18
 
 ## Context

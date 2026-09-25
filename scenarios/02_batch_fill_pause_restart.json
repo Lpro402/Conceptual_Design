@@ -1,0 +1,112 @@
+{
+ "name": "[1.1-1.3] Batch filling, pause, controller restart and re-measure",
+ "config2_changes": "1.1, 1.2, 1.3",
+ "disclaimer": "Academic simulation; all thresholds and timings are placeholders.",
+ "steps": [
+  [
+   "wake"
+  ],
+  [
+   "run_self_test"
+  ],
+  [
+   "answer_environment",
+   {
+    "enclosed": false
+   }
+  ],
+  [
+   "confirm_deployment",
+   {
+    "diffuser_outside_confirmed": true
+   }
+  ],
+  [
+   "verify_connection"
+  ],
+  [
+   "handshake"
+  ],
+  [
+   "pour_water",
+   {
+    "liters": 0.7
+   }
+  ],
+  [
+   "confirm_fill"
+  ],
+  [
+   "expect",
+   {
+    "state": "FILL_SESSION",
+    "blocker_contains": "Missing 1.1"
+   }
+  ],
+  [
+   "pour_water",
+   {
+    "liters": 0.6
+   }
+  ],
+  [
+   "restart_controller"
+  ],
+  [
+   "expect",
+   {
+    "state": "FILL_SESSION",
+    "blocker_contains": "re-measure",
+    "actuators": {
+     "cartridge_water_valve_open": false
+    }
+   }
+  ],
+  [
+   "pour_water",
+   {
+    "liters": 0.5
+   }
+  ],
+  [
+   "confirm_fill"
+  ],
+  [
+   "expect",
+   {
+    "blocker_contains": "invalid"
+   }
+  ],
+  [
+   "remeasure_water"
+  ],
+  [
+   "confirm_fill"
+  ],
+  [
+   "expect",
+   {
+    "state": "CONFIRM_ACTIVATION",
+    "cartridges": [
+     "SELECTED",
+     "DRY_READY",
+     "DRY_READY"
+    ]
+   }
+  ],
+  [
+   "confirm_activation"
+  ],
+  [
+   "expect",
+   {
+    "state": "WATER_ADMISSION",
+    "cartridges": [
+     "ACTIVATING",
+     "DRY_READY",
+     "DRY_READY"
+    ]
+   }
+  ]
+ ]
+}

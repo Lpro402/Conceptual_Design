@@ -1,0 +1,62 @@
+{
+ "name": "Water above 2.2 L is rejected until chamber 220 is drained",
+ "config2_changes": "1.1",
+ "disclaimer": "Academic simulation; all thresholds and timings are placeholders.",
+ "steps": [
+  [
+   "wake"
+  ],
+  [
+   "run_self_test"
+  ],
+  [
+   "answer_environment",
+   {
+    "enclosed": false
+   }
+  ],
+  [
+   "confirm_deployment",
+   {
+    "diffuser_outside_confirmed": true
+   }
+  ],
+  [
+   "verify_connection"
+  ],
+  [
+   "handshake"
+  ],
+  [
+   "pour_water",
+   {
+    "liters": 2.5
+   }
+  ],
+  [
+   "confirm_fill"
+  ],
+  [
+   "expect",
+   {
+    "state": "FILL_SESSION",
+    "blocker_contains": "1.8"
+   }
+  ],
+  [
+   "drain_chamber",
+   {
+    "liters": 0.5
+   }
+  ],
+  [
+   "confirm_fill"
+  ],
+  [
+   "expect",
+   {
+    "state": "CONFIRM_ACTIVATION"
+   }
+  ]
+ ]
+}

@@ -1,0 +1,68 @@
+{
+ "name": "[2.1-2.3] VENT_DEPLOYED alone does not allow the mission to continue",
+ "config2_changes": "2.1, 2.3",
+ "disclaimer": "Academic simulation; all thresholds and timings are placeholders.",
+ "steps": [
+  [
+   "wake"
+  ],
+  [
+   "run_self_test"
+  ],
+  [
+   "answer_environment",
+   {
+    "enclosed": false
+   }
+  ],
+  [
+   "confirm_deployment",
+   {
+    "diffuser_outside_confirmed": false
+   }
+  ],
+  [
+   "expect",
+   {
+    "state": "AWAIT_DEPLOY",
+    "blocker_contains": "VENT_DEPLOYED alone"
+   }
+  ],
+  [
+   "set",
+   {
+    "vent_deployed": false
+   }
+  ],
+  [
+   "confirm_deployment",
+   {
+    "diffuser_outside_confirmed": true
+   }
+  ],
+  [
+   "expect",
+   {
+    "blocker_contains": "vent hose"
+   }
+  ],
+  [
+   "set",
+   {
+    "vent_deployed": true
+   }
+  ],
+  [
+   "confirm_deployment",
+   {
+    "diffuser_outside_confirmed": true
+   }
+  ],
+  [
+   "expect",
+   {
+    "state": "AWAIT_CONNECT"
+   }
+  ]
+ ]
+}

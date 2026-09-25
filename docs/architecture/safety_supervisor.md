@@ -2,39 +2,35 @@
 
 ## Intent
 
-This module demonstrates architectural separation between normal mission
-control and a protective override path. It is not a functional-safety design
-and makes no SIL, ASIL, diagnostic-coverage, timing, redundancy, or compliance
-claim.
+Conceptual model of hardware channel 620: an authority separate from the main
+controller and from the RTOS. It is not a functional-safety design and makes no
+SIL, ASIL, diagnostic-coverage, timing or compliance claim.
 
-## Simulated faults
+## Supervised conditions
 
-- E-Stop
-- HVIL open
-- isolation fault
-- overtemperature
-- hydrogen alarm
-- leak
-- abnormal pressure
-- loss of electrolyte flow
-- pump failure
-- fan failure
-- contactor feedback mismatch
+E-Stop, HVIL, IMD 490 isolation, overtemperature (≥ 65 °C), hydrogen at the
+vent, leak, contactor feedback, and — while the reaction runs — pressure,
+electrolyte flow, pump and blower availability.
+
+## IMD 490 thresholds [8.1, 8.3]
+
+| Level | Placeholder (Ω/V of output voltage) | Response |
+|---|---|---|
+| Normal | ≥ 500 | — |
+| Warning | 100 – 500 | Indication only; continue while every other condition is safe |
+| Block | < 100 | Prevents transfer before it starts; trips during transfer |
+
+Isolation is checked before transfer and monitored continuously during it.
+A protocol fallback (ISO 15118 → DIN 70121) never bypasses an HVIL or
+isolation block.
 
 ## Protective response
 
-A critical injected fault immediately:
+A trip immediately disables conversion, asserts gate disable, opens the input
+and output contactors, closes the cartridge water valve, stops the pump, keeps
+ventilation and the external vent open (unless the blower itself failed),
+latches the fault and logs a critical record. After wetting, the controller
+then completes purge and cooldown before `FAULT_LOCKED`.
 
-1. disables simulated conversion;
-2. opens simulated input and output contactors;
-3. asserts simulated gate disable;
-4. closes simulated water admission;
-5. stops the simulated pump;
-6. retains ventilation/purge when the simulated fan is available;
-7. latches the fault;
-8. writes a timestamped critical log entry.
-
-The main controller cannot resume mission sequencing while a fault is latched.
-Reset exists only to make repeated demonstrations convenient; a real system
-would require an engineered fault-clear and service policy.
-
+Reset exists only to make demonstrations repeatable; it is not a service
+procedure.

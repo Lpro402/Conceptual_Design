@@ -1,0 +1,74 @@
+{
+ "name": "[4.1, 5.2] Enclosed space blocks, wall needs confirmation, cargo must be cleared",
+ "config2_changes": "4.1, 5.2",
+ "disclaimer": "Academic simulation; all thresholds and timings are placeholders.",
+ "steps": [
+  [
+   "wake"
+  ],
+  [
+   "run_self_test"
+  ],
+  [
+   "answer_environment",
+   {
+    "enclosed": true
+   }
+  ],
+  [
+   "expect",
+   {
+    "state": "ENVIRONMENT_CHECK",
+    "blocker_contains": "Enclosed"
+   }
+  ],
+  [
+   "answer_environment",
+   {
+    "enclosed": false,
+    "near_wall": true
+   }
+  ],
+  [
+   "expect",
+   {
+    "blocker_contains": "open side"
+   }
+  ],
+  [
+   "set",
+   {
+    "vent_path_clear": false
+   }
+  ],
+  [
+   "answer_environment",
+   {
+    "enclosed": false,
+    "near_wall": true,
+    "diffuser_on_open_side": true
+   }
+  ],
+  [
+   "expect",
+   {
+    "blocker_contains": "clear cargo"
+   }
+  ],
+  [
+   "set",
+   {
+    "vent_path_clear": true
+   }
+  ],
+  [
+   "recheck_vent_path"
+  ],
+  [
+   "expect",
+   {
+    "state": "AWAIT_DEPLOY"
+   }
+  ]
+ ]
+}

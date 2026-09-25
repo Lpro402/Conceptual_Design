@@ -1,172 +1,87 @@
-# Metalyte PRO-MPRO software concept demonstrator
+# Metalyte PRO-MPRO — Configuration 2 digital twins
 
-This repository contains an executable, academic Tier-0 software concept for
-the Metalyte PRO-MPRO emergency EV mobility-restoration system. It demonstrates
-mission sequencing, three-cassette state management, simulated power transfer,
-independent safety override, purge/cooldown, service lockout, and event logging.
+Executable digital twins of the Metalyte PRO-MPRO emergency EV
+mobility-restoration system, alternative 1, **Configuration 2**: three dry,
+water-activated aluminium-air cartridges (3 kWh each, one active at a time)
+delivering 10 kW — up to 12 kW thermal-limited Boost — through a 96 V DC link,
+an LIC buffer and an isolated DC/DC converter to a CCS2 vehicle inlet.
 
-> **Important:** This is not production firmware, a real EV charger, a CCS2
-> implementation, a functional-safety implementation, hardware-control
-> software, or a controller suitable for real electrochemical equipment. All
-> thresholds, measurements, timings, and actuator commands are simulated
-> placeholders and must not be used to operate hardware.
+> **Academic concept twins.** Not firmware, not a charger, not a CCS2 stack, not
+> a functional-safety design and not test evidence. Every value is a Tier 0–1
+> design value or a labelled simulation placeholder.
 
-## Public interactive system
+## Open the twins
 
-The browser-based concept system is published at:
+| Twin | Link | What it shows |
+|---|---|---|
+| All twins | **https://lpro402.github.io/Conceptual_Design/hub.html** | Entry point and how the twins connect |
+| Software twin | **https://lpro402.github.io/Conceptual_Design/** | 15-step Configuration 2 mission, LCD, architecture, diagnostics, service |
+| Chemical twin | **https://lpro402.github.io/Conceptual_Design/chemical-twin/** | 3D system and cartridge, reactions, mission gates, fill session, twin layers |
+| Control twin | **https://lpro402.github.io/Conceptual_Design/control-twin/** | Power/current, LIC DC-link and thermal loops with live tuning |
+| Integration twin | **https://lpro402.github.io/Conceptual_Design/integration-twin/** | Integration levels L0–L3, threads T1–T7, gates, fault injection |
 
-**https://lpro402.github.io/Conceptual_Design/**
+Presentation links kept from earlier versions:
+`?scenario=charging`, `?scenario=charging&view=lcd`,
+`?scenario=charging&view=architecture`.
 
-For a presentation-ready operating screen, open:
+![Software twin](docs/assets/metalyte_hmi_dashboard.png)
 
-**https://lpro402.github.io/Conceptual_Design/?scenario=charging**
+![Chemical twin](docs/assets/mpro_chemical_twin.png)
 
-For the standalone physical LCD concept, open:
+![Control twin](docs/assets/mpro_control_twin.png)
 
-**https://lpro402.github.io/Conceptual_Design/?scenario=charging&view=lcd**
-
-For the live Software Tier-0 architecture, open:
-
-**https://lpro402.github.io/Conceptual_Design/?scenario=charging&view=architecture**
-
-The public interface is a self-contained static demonstrator with five views:
-
-- **Operation** — a guided rescue mission with one primary action per state.
-- **LCD Display** — a compact physical-screen concept synchronized with the
-  same state machine, measurements, cartridge lifecycle, and safety override.
-- **Architecture** — an interactive Software Tier-0 model whose active modules,
-  mission phase, safety authority, contracts, and source-code links follow the
-  running simulation.
-- **Diagnostics** — live simulated measurements, fault injection, safety-chain
-  response, actuator commands, and event logging.
-- **Service** — cartridge readiness, service capacity, and the conceptual
-  closed-loop replacement and recycling process.
-
-The static public interface and the Python/Streamlit engineering demonstrator
-represent the same Tier-0 logic. The public interface is optimized for reports,
-presentations, and sharing; Streamlit remains the executable Python reference.
-
-![Metalyte PRO-MPRO operating screen](docs/assets/metalyte_hmi_dashboard.png)
-
-![Metalyte PRO-MPRO LCD display concept](docs/assets/metalyte_lcd_display.png)
-
-![Metalyte PRO-MPRO Software Tier-0 architecture](docs/assets/metalyte_software_architecture.png)
-
-The repository organization is temporary. It is not a product tree, PBS, BOM,
-ICD, or N-squared model.
-
-## Architecture summary
-
-The demonstrator separates mission control from the independent safety path:
-
-- `MainSystemController` owns deterministic mission sequencing.
-- `IndependentSafetySupervisor` evaluates critical conditions and can override
-  the main controller.
-- `CassetteReactionManager` enforces one active cassette and the
-  `DRY_READY -> SELECTED -> ACTIVATING -> ACTIVE -> SPENT` lifecycle.
-- `PowerControlManager` simulates pre-charge, contactors, converter enable, and
-  controlled/emergency shutdown.
-- `ThermalFluidManager` simulates water, pump, fan, ventilation, and purge.
-- `EVCommunicationManager`, `HMIManager`, `ServiceLoggingManager`, and the
-  simulated HAL provide the remaining Tier-0 responsibilities.
-
-The main nominal sequence is:
+## Repository layout
 
 ```text
-STANDBY -> WAKE_UP_SELF_TEST -> VEHICLE_CONNECTION
--> CASSETTE_SELECTION -> WATER_ACTIVATION -> PRIMING
--> PRE_CHARGE -> POWER_TRANSFER -> RAMP_DOWN
--> PURGE_COOLDOWN -> READY or SERVICE_REQUIRED
+src/mpro/
+  baseline.json        single design baseline shared by all twins
+  chemical_twin/       cartridge plant: polarisation, Al/H₂O/O₂ mass balance, H₂, thermal
+  software_twin/       Configuration 2 state machine, safety supervisor, fill session, storage
+  control_twin/        power/current, LIC DC-link and thermal loops (design 4.3)
+  twin_services/       monitoring · diagnostics · prognostics · prescriptive · UQ emulator
+scenarios/             15 JSON demonstrations (one per Configuration 2 change + fault paths)
+apps/
+  software_twin_app.py Streamlit operator console (software twin on the chemical twin)
+  chemical_twin_study.py  scenarios + LHS / Gaussian-process uncertainty study
+docs/                  GitHub Pages site (the four web twins) and architecture notes
+tests/                 twins, web-page consistency and repository guard
 ```
 
-Critical injected faults lead to `EMERGENCY_SHUTDOWN`; faults remain latched
-until the demonstrator is reset.
+## Configuration 2 in the software twin
 
-## Requirements
+| Change | Behaviour | Scenario |
+|---|---|---|
+| 1.1–1.3 | `FILL_SESSION`: batch pouring into chamber 220, valve closed until 1.8 L is measured and confirmed; restart forces re-measure; cancel keeps the cartridge dry; > 2.2 L rejected | 02, 03, 04 |
+| 2.1 | `AWAIT_DEPLOY`: cable + vent signals **and** driver confirmation | 05 |
+| 4.1, 5.2 | `ENVIRONMENT_CHECK`: enclosed space blocks; wall requires diffuser on open side; obstructed vents require clearing cargo | 06 |
+| 8.1, 8.3 | HVIL window, CP level, IMD warning/block before and during transfer; ISO 15118 → DIN 70121 on communication failure only | 07–10 |
+| 9.1 | Standby wake sources, D-BIT interval, temperature-compensated self-test | 14 |
+| 7.1 | Thermal: Boost disable 52 °C, derate 55 °C, shutdown 65 °C | 15 |
 
-- Python 3.12+
-- Streamlit 1.x
-- pytest 8.x (for tests)
+See [docs/architecture/state_machine.md](docs/architecture/state_machine.md),
+[docs/architecture/safety_supervisor.md](docs/architecture/safety_supervisor.md)
+and [docs/architecture/digital_twins.md](docs/architecture/digital_twins.md).
 
-## Installation
+## Run locally
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-python -m pip install -e ".[test]"
+python -m pip install -e ".[test,app,study]"
+python -m pytest                                   # all twins + web consistency + guard
+python -m streamlit run apps/software_twin_app.py  # operator console
+python apps/chemical_twin_study.py                 # UQ study → exports/chemical_twin/
+python -m http.server 8770 --directory docs        # web twins at http://127.0.0.1:8770/
 ```
 
-## Run the dashboard
+Run a single demonstration scenario:
 
 ```powershell
-python -m streamlit run software_demo/app.py
+python -c "from pathlib import Path; from mpro.software_twin import scenario; print(scenario.run(Path('scenarios/02_batch_fill_pause_restart.json')).state)"
 ```
 
-The dashboard opens locally in a browser. Follow the numbered controls from
-Wake Up through power transfer, then use Stop and Advance Shutdown Step to
-observe ramp-down and purge before returning to Ready.
+## Content policy
 
-To preview the public static interface locally:
-
-```powershell
-python -m http.server 8770 --directory docs
-```
-
-Then open `http://127.0.0.1:8770/`.
-
-## Run tests
-
-```powershell
-python -m pytest
-```
-
-## Word-ready link and screenshot
-
-Use the public link above as a clickable hyperlink in Word. The controlled
-dashboard image is available at:
-
-`https://lpro402.github.io/Conceptual_Design/assets/metalyte_hmi_dashboard.png`
-
-The standalone physical LCD image is available at:
-
-`https://lpro402.github.io/Conceptual_Design/assets/metalyte_lcd_display.png`
-
-The Software Tier-0 architecture image is available at:
-
-`https://lpro402.github.io/Conceptual_Design/assets/metalyte_software_architecture.png`
-
-To refresh the image after a UI change:
-
-1. Open the public or local static interface with `?scenario=charging`.
-2. Set the browser to a 16:9 window.
-3. Capture the system overview in `STANDBY` or `POWER_TRANSFER`.
-4. Inject a fault and capture the red safety panel and event log.
-5. Store selected images under `exports/figures/` only when they are intended
-   as controlled report artifacts (generated exports are ignored by default).
-
-## Example scenarios
-
-JSON scenario descriptions are stored in `software_demo/scenarios/`. They
-document normal and fault demonstrations; the UI also supports manual actions.
-
-## Known limitations
-
-- There is no real CCS2, PLC, HVIL, contactor, sensor, pump, fan, or valve I/O.
-- No thresholds have been validated against a physical system.
-- Timing is user-stepped rather than real-time.
-- The simulated electrical and electrochemical values are illustrative only.
-- Reset clears the academic demonstrator; it does not represent a real service
-  or fault-clear procedure.
-- This is not an RTOS design and makes no task-scheduling claim.
-
-## Relationship to other Tier-0 work
-
-- **Mechanical:** consumes conceptual packaging and handling context only.
-- **Electronic:** mirrors the conceptual controller, safety, power, and sensor
-  responsibilities without selecting components.
-- **Electrochemical:** represents cassette lifecycle and reaction enablement,
-  not chemical kinetics.
-- **Thermal:** represents flow, fan, purge, temperature, and derating signals,
-  not a validated heat-transfer model.
-
-See `docs/architecture/` for the software architecture and safety rationale.
+This repository contains software and code only. Project documents, tables,
+course material, lecture slides, datasheets and CAD files are not stored here;
+`tests/test_repository_guard.py` enforces it.

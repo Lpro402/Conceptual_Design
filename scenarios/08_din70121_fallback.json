@@ -1,0 +1,41 @@
+{
+ "name": "[8.1] ISO 15118 communication failure falls back to DIN 70121",
+ "config2_changes": "8.1",
+ "disclaimer": "Academic simulation; all thresholds and timings are placeholders.",
+ "steps": [
+  [
+   "wake"
+  ],
+  [
+   "run_self_test"
+  ],
+  [
+   "answer_environment",
+   {
+    "enclosed": false
+   }
+  ],
+  [
+   "confirm_deployment",
+   {
+    "diffuser_outside_confirmed": true
+   }
+  ],
+  [
+   "verify_connection"
+  ],
+  [
+   "handshake",
+   {
+    "iso15118_ok": false
+   }
+  ],
+  [
+   "expect",
+   {
+    "state": "FILL_SESSION",
+    "protocol": "DIN 70121"
+   }
+  ]
+ ]
+}

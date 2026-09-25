@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0b2447">
-  <meta name="description" content="Interactive Metalyte PRO-MPRO software, safety, architecture, and operator-interface demonstrator">
-  <title>Metalyte PRO-MPRO | Full System Demonstrator</title>
-  <link rel="stylesheet" href="assets/styles.css?v=20260719-demo-hub">
+  <meta name="description" content="Configuration 2 software twin of Metalyte PRO-MPRO: mission logic, LCD, architecture, diagnostics and service">
+  <title>MPRO Software Twin</title>
+  <link rel="stylesheet" href="assets/styles.css?v=20260925-config2">
 </head>
 <body>
   <div class="app-shell">
@@ -17,7 +17,7 @@
         </span>
         <span>
           <strong>METALYTE PRO</strong>
-          <small>Emergency Mobility System</small>
+          <small>Software Twin · Configuration 2</small>
         </span>
       </a>
 
@@ -27,11 +27,15 @@
         <button class="view-tab" data-view="architecture">Architecture</button>
         <button class="view-tab" data-view="diagnostics">Diagnostics</button>
         <button class="view-tab" data-view="service">Service</button>
+        <a class="view-tab twin-link" href="chemical-twin/">Chemical ↗</a>
+        <a class="view-tab twin-link" href="control-twin/">Control ↗</a>
+        <a class="view-tab twin-link" href="integration-twin/">Integration ↗</a>
+        <a class="view-tab twin-link" href="hub.html">Twins</a>
       </nav>
 
       <div class="system-badge">
         <span class="pulse-dot" id="header-status-dot"></span>
-        <span id="header-status">Ready</span>
+        <span id="header-status">Ready — Standby</span>
       </div>
     </header>
 
@@ -48,7 +52,7 @@
               <p id="state-copy">The system is stored and ready for a rescue event.</p>
               <div class="mission-progress" aria-label="Rescue mission progress">
                 <div class="mission-progress__meta">
-                  <span id="progress-label">Step 1 of 11</span>
+                  <span id="progress-label">Step 1 of 15</span>
                   <span id="progress-percent">0%</span>
                 </div>
                 <div class="progress-track"><span id="progress-bar"></span></div>
@@ -196,7 +200,7 @@
               <section class="lcd-vitals-card lcd-panel-section">
                 <span class="lcd-label">03 / PROCESS VALUES</span>
                 <div class="lcd-vitals-grid">
-                  <div><span>STACK</span><strong><b id="lcd-voltage">57.6</b> V</strong></div>
+                  <div><span>STACK</span><strong><b id="lcd-voltage">0.0</b> V</strong></div>
                   <div><span>CURRENT</span><strong><b id="lcd-current">0.0</b> A</strong></div>
                   <div><span>TEMP</span><strong><b id="lcd-temperature">25.0</b> °C</strong></div>
                   <div><span>FLOW</span><strong><b id="lcd-flow">0.0</b> L/min</strong></div>
@@ -253,13 +257,13 @@
       <section class="view-panel" id="view-architecture" aria-labelledby="architecture-heading">
         <div class="page-heading architecture-page-heading">
           <div>
-            <span class="panel-eyebrow">EXECUTABLE SOFTWARE TIER-0 MODEL</span>
+            <span class="panel-eyebrow">SOFTWARE TWIN · CONFIGURATION 2</span>
             <h1 id="architecture-heading">Software Control Architecture</h1>
             <p>Module responsibilities, command/status boundaries, direct safety authority, and operating flow are linked to the live demonstrator state.</p>
           </div>
           <div class="architecture-runtime-badge">
             <span class="pulse-dot"></span>
-            <span><small>SIMULATOR STATE</small><strong id="architecture-runtime-state">STANDBY</strong></span>
+            <span><small>SIMULATOR STATE</small><strong id="architecture-runtime-state">SYSTEM_STANDBY</strong></span>
           </div>
         </div>
 
@@ -324,13 +328,13 @@
 
               <button class="architecture-module module-reaction" data-architecture-module="reaction" type="button">
                 <span class="module-code">SW-REA-01</span><span class="module-live">STANDBY</span>
-                <strong>Cassette & Reaction Manager</strong><p>Cassette exclusivity, water activation, priming, reaction state, and spent declaration.</p>
+                <strong>Cartridge & Reaction Manager</strong><p>One active cartridge, FILL_SESSION with the valve closed, activation, prime and spent declaration.</p>
                 <span class="module-port">reaction_cmd / reaction_status</span>
               </button>
 
               <button class="architecture-module module-service" data-architecture-module="service" type="button">
                 <span class="module-code">SW-SVC-01</span><span class="module-live">LOGGING</span>
-                <strong>Service & Logging Manager</strong><p>Event history, cassette usage, service capacity, and readiness records.</p>
+                <strong>Service, Logging & Storage</strong><p>Event history, cartridge usage, wake sources, D-BIT interval and service lockout.</p>
                 <span class="module-port">log_event / service_state</span>
               </button>
 
@@ -342,7 +346,7 @@
 
               <button class="architecture-module module-hal" data-architecture-module="hal" type="button">
                 <span class="module-code">SW-HAL-01</span><span class="module-live">ONLINE</span>
-                <strong>Simulated Hardware Abstraction Layer</strong>
+                <strong>Simulated HAL + Chemical Twin Plant</strong>
                 <p>Sensors | Contactors | Valves | Pump | Fans | Memory | ADC / GPIO / CAN / PLC boundary</p>
               </button>
             </section>
@@ -364,8 +368,8 @@
 
         <section class="architecture-plant">
           <div class="architecture-hal-label"><span>CONTROLLED SYSTEM BOUNDARY</span><strong>External Plant & Interfaces</strong></div>
-          <article><span>PLANT-AL</span><strong>Al-Air Cassette & Stack</strong><small>Simulated reaction and cassette lifecycle</small></article>
-          <article><span>PLANT-EV</span><strong>Vehicle / EV</strong><small>Simulated DC transfer and connection boundary</small></article>
+          <article><span>PLANT-AL</span><strong>Al-Air Cartridge Plant</strong><small>Chemical twin: 96 V stack, KOH 4 M, thermal and H₂</small></article>
+          <article><span>PLANT-EV</span><strong>Vehicle / EV</strong><small>CCS2 · HVIL · CP · ISO 15118 / DIN 70121</small></article>
           <article><span>PLANT-IO</span><strong>Sensors & Actuators</strong><small>Simulated measurement and command channels</small></article>
         </section>
 
@@ -376,13 +380,13 @@
           </div>
           <div class="architecture-state-flow" id="architecture-state-flow">
             <div data-architecture-phase="standby"><span>01</span><strong>Standby</strong><small>Isolated & ready</small></div><i></i>
-            <div data-architecture-phase="self-test"><span>02</span><strong>Wake-Up</strong><small>Self-test</small></div><i></i>
-            <div data-architecture-phase="vehicle"><span>03</span><strong>EV Link</strong><small>Connection & handshake</small></div><i></i>
-            <div data-architecture-phase="cassette"><span>04</span><strong>Cassette</strong><small>Select & isolate</small></div><i></i>
-            <div data-architecture-phase="reaction"><span>05</span><strong>Reaction</strong><small>Water & priming</small></div><i></i>
+            <div data-architecture-phase="self-test"><span>02</span><strong>Self-Test</strong><small>+ environment check</small></div><i></i>
+            <div data-architecture-phase="connect"><span>03</span><strong>Deploy & Link</strong><small>Vent, HVIL, CP, handshake</small></div><i></i>
+            <div data-architecture-phase="fill"><span>04</span><strong>Fill Session</strong><small>1.8 L, valve closed</small></div><i></i>
+            <div data-architecture-phase="reaction"><span>05</span><strong>Reaction</strong><small>Admission & prime</small></div><i></i>
             <div data-architecture-phase="transfer"><span>06</span><strong>Transfer</strong><small>Pre-charge & power</small></div><i></i>
             <div data-architecture-phase="shutdown"><span>07</span><strong>Shutdown</strong><small>Ramp-down & purge</small></div><i></i>
-            <div data-architecture-phase="complete"><span>08</span><strong>Complete</strong><small>Ready or service</small></div>
+            <div data-architecture-phase="complete"><span>08</span><strong>Disconnect</strong><small>Standby or service</small></div>
           </div>
           <div class="architecture-fault-route"><strong>INDEPENDENT FAULT ROUTE</strong><span>Any operating state</span><i></i><span>Emergency shutdown</span><i></i><span>Fault locked</span></div>
         </section>
@@ -398,12 +402,12 @@
           <section class="diagnostic-card sensor-panel">
             <div class="section-heading compact"><div><span class="panel-eyebrow">LIVE DATA</span><h2>Simulated Measurements</h2></div><span class="live-chip is-live"><span></span> LIVE</span></div>
             <div class="sensor-grid">
-              <article><small>STACK VOLTAGE</small><strong id="sensor-voltage">57.6</strong><span>V</span></article>
+              <article><small>STACK VOLTAGE</small><strong id="sensor-voltage">0.0</strong><span>V</span></article>
               <article><small>STACK CURRENT</small><strong id="sensor-current">0.0</strong><span>A</span></article>
               <article><small>TEMPERATURE</small><strong id="sensor-temperature">25.0</strong><span>°C</span></article>
               <article><small>ELECTROLYTE FLOW</small><strong id="sensor-flow">0.0</strong><span>L/min</span></article>
               <article><small>PRESSURE</small><strong id="sensor-pressure">1.00</strong><span>bar</span></article>
-              <article><small>HYDROGEN</small><strong id="sensor-hydrogen">0.00</strong><span>%</span></article>
+              <article><small>H₂ AT VENT</small><strong id="sensor-hydrogen">0.0</strong><span>% LEL</span></article>
             </div>
           </section>
 
@@ -468,12 +472,12 @@
     </main>
 
     <footer>
-      <span>Metalyte PRO-MPRO · Tier-0 Concept Demonstrator</span>
+      <span>Metalyte PRO-MPRO · Configuration 2 Software Twin</span>
       <span>ACADEMIC SIMULATION ONLY · NO REAL HARDWARE, VEHICLE OR CCS2 CONTROL</span>
     </footer>
   </div>
 
   <div class="toast-region" id="toast-region" aria-live="polite"></div>
-  <script src="assets/app.js?v=20260719-demo-hub" defer></script>
+  <script src="assets/app.js?v=20260925-config2" defer></script>
 </body>
 </html>

@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MPRO Control Twin</title>
+  <meta name="description" content="Interactive control twin of MPRO: cascaded power/current loop, LIC DC-link loop and thermal feed-forward loop.">
+  <style>
+    :root { --bg:#f6f8fb; --card:#fff; --ink:#10233f; --muted:#5b6b80; --line:#dbe3ee; --grid:#e8eef5;
+      --s1:#1769e0; --s2:#e08a00; --s3:#0e9f6e; --s4:#9b59d0; --accent:#1769e0; }
+    @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#0b1620; --card:#12212e; --ink:#e6eef6; --muted:#9eb2bf; --line:#20394a; --grid:#1a2d3b; --s1:#5aa2ff; --s2:#f5b041; --s3:#4ade80; --s4:#c084fc; --accent:#5aa2ff; } }
+    :root[data-theme="dark"] { --bg:#0b1620; --card:#12212e; --ink:#e6eef6; --muted:#9eb2bf; --line:#20394a; --grid:#1a2d3b; --s1:#5aa2ff; --s2:#f5b041; --s3:#4ade80; --s4:#c084fc; --accent:#5aa2ff; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.5 "Segoe UI", system-ui, sans-serif; }
+    main { max-width:1180px; margin:0 auto; padding:28px 16px 48px; }
+    header p { color:var(--muted); margin:4px 0 0; max-width:820px; }
+    header nav a { color:var(--accent); margin-right:14px; font-weight:600; }
+    h1 { margin:0; font-size:1.7rem; }
+    .loop { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px; margin-top:18px;
+      display:grid; grid-template-columns:260px 1fr; gap:18px; }
+    @media (max-width:760px) { .loop { grid-template-columns:1fr; } }
+    .loop h2 { margin:0 0 4px; font-size:1.1rem; }
+    .loop .why { color:var(--muted); font-size:.88rem; margin:0 0 12px; }
+    label { display:block; font-size:.82rem; color:var(--muted); margin-top:10px; }
+    label output { float:right; color:var(--ink); font-weight:700; font-variant-numeric:tabular-nums; }
+    input[type=range] { width:100%; }
+    .kpi { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:14px; }
+    .kpi div { border:1px solid var(--line); border-radius:9px; padding:7px 9px; }
+    .kpi small { display:block; color:var(--muted); font-size:.72rem; }
+    .kpi strong { font-variant-numeric:tabular-nums; }
+    canvas { width:100%; height:260px; display:block; }
+    .legend { display:flex; gap:14px; flex-wrap:wrap; font-size:.8rem; color:var(--muted); margin-top:6px; }
+    .legend i { display:inline-block; width:14px; height:3px; vertical-align:middle; margin-right:5px; background:var(--c); }
+    table { width:100%; border-collapse:collapse; font-size:.86rem; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; margin-top:18px; }
+    th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); }
+    th { color:var(--muted); font-weight:700; font-size:.76rem; letter-spacing:.05em; }
+    footer { color:var(--muted); font-size:.8rem; margin-top:20px; }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Control Twin · Configuration 2</h1>
+    <p>The three feedback loops of the control design, below the state machine and the independent safety supervisor. The same reduced-order models run in Python (<code>src/mpro/control_twin</code>) with automated tests. Parameters are tuning placeholders, not validated plant values.</p>
+    <nav><a href="../hub.html">All twins</a><a href="../">Software twin</a><a href="../chemical-twin/">Chemical twin</a><a href="../integration-twin/">Integration twin</a></nav>
+  </header>
+
+  <section class="loop">
+    <div>
+      <h2>1 · Cascaded power / current loop</h2>
+      <p class="why">A fast inner current loop under a slower PI power loop with feed-forward. The reference is ramp-limited so the cartridge never sees a load jump; Boost to 12 kW is requested at t = 3 s.</p>
+      <label>Ramp limit dP/dt <output id="rampOut"></output><input id="ramp" type="range" min="5" max="80" step="5" value="20"></label>
+      <label>Power-loop Kp <output id="kpOut"></output><input id="kp" type="range" min="0" max="10" step="0.5" value="2"></label>
+      <label>Power-loop Ki <output id="kiOut"></output><input id="ki" type="range" min="0" max="40" step="1" value="4"></label>
+      <label>Boost request <output id="boostOut"></output><input id="boost" type="range" min="10" max="12" step="0.5" value="12"></label>
+      <div class="kpi"><div><small>Overshoot</small><strong id="k1a"></strong></div><div><small>Settling (2 %)</small><strong id="k1b"></strong></div></div>
+    </div>
+    <div><canvas id="c1"></canvas><div class="legend"><span style="--c:var(--muted)"><i></i>request</span><span style="--c:var(--s2)"><i></i>ramped reference</span><span style="--c:var(--s1)"><i></i>delivered power</span></div></div>
+  </section>
+
+  <section class="loop">
+    <div>
+      <h2>2 · DC link stabilised by the LIC</h2>
+      <p class="why">The load steps from 10 to 12 kW at t = 2 s. The stack answers with an ohmic drop and a slow polarisation; the LIC carries the fast part around a slowly moving reference and hands the load back to the stack.</p>
+      <label><input id="lic" type="checkbox" checked> LIC loop enabled</label>
+      <label>LIC Kp [A/V] <output id="lkpOut"></output><input id="lkp" type="range" min="0" max="20" step="1" value="10"></label>
+      <label>Load step to <output id="stepOut"></output><input id="step" type="range" min="10.5" max="13" step="0.5" value="12"></label>
+      <div class="kpi"><div><small>Fast dip</small><strong id="k2a"></strong></div><div><small>LIC peak</small><strong id="k2b"></strong></div></div>
+    </div>
+    <div><canvas id="c2" style="height:150px"></canvas><div class="legend"><span style="--c:var(--s1)"><i></i>V_DC [V]</span></div><canvas id="c2b" style="height:150px"></canvas><div class="legend"><span style="--c:var(--s3)"><i></i>stack current [A]</span><span style="--c:var(--s4)"><i></i>LIC current [A]</span><span style="--c:var(--muted)"><i></i>load current [A]</span></div></div>
+  </section>
+
+  <section class="loop">
+    <div>
+      <h2>3 · Thermal / fluid loop</h2>
+      <p class="why">Feed-forward from the power command plus PI on core temperature. Boost is requested at 5 min; above 52 °C Boost is disabled, above 55 °C power derates.</p>
+      <label><input id="ff" type="checkbox" checked> Feed-forward enabled</label>
+      <label>Ambient <output id="ambOut"></output><input id="amb" type="range" min="-25" max="50" step="5" value="25"></label>
+      <label>Cooling capability UA <output id="uaOut"></output><input id="ua" type="range" min="15" max="90" step="5" value="60"></label>
+      <div class="kpi"><div><small>Peak after Boost</small><strong id="k3a"></strong></div><div><small>Boost time kept</small><strong id="k3b"></strong></div></div>
+    </div>
+    <div><canvas id="c3"></canvas><div class="legend"><span style="--c:var(--s2)"><i></i>core temperature [°C]</span><span style="--c:var(--s1)"><i></i>power [kW ×4]</span><span style="--c:var(--s3)"><i></i>airflow command [×40]</span></div></div>
+  </section>
+
+  <table>
+    <thead><tr><th>Mode</th><th>Power loop</th><th>LIC loop</th><th>Thermal / fluid</th></tr></thead>
+    <tbody id="modes"></tbody>
+  </table>
+
+  <footer>Academic control-architecture twin. The independent safety supervisor sits outside these loops and never waits for a PI to settle.</footer>
+</main>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const EFF = 0.92, V_EV = 400;
+
+function makePI(kp, ki, lo, hi, leak = 0) {
+  let integral = 0;
+  return (err, dt) => {
+    const cand = integral + ki * err * dt - leak * integral * dt;
+    const raw = kp * err + cand, out = clamp(raw, lo, hi);
+    if (out === raw || (raw > out) !== (err > 0)) integral = cand;
+    return out;
+  };
+}
+
+function plot(canvas, t, series, yMin, yMax) {
+  const dpr = window.devicePixelRatio || 1, w = canvas.clientWidth, h = canvas.clientHeight;
+  canvas.width = w * dpr; canvas.height = h * dpr;
+  const g = canvas.getContext("2d"); g.scale(dpr, dpr);
+  const pad = { l: 44, r: 10, t: 10, b: 24 }, pw = w - pad.l - pad.r, ph = h - pad.t - pad.b;
+  const x = v => pad.l + (v - t[0]) / (t[t.length - 1] - t[0]) * pw, y = v => pad.t + (1 - (v - yMin) / (yMax - yMin)) * ph;
+  g.strokeStyle = css("--grid"); g.fillStyle = css("--muted"); g.font = "11px system-ui"; g.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const v = yMin + (yMax - yMin) * i / 4, yy = y(v);
+    g.beginPath(); g.moveTo(pad.l, yy); g.lineTo(w - pad.r, yy); g.stroke();
+    g.fillText(v.toFixed(Math.abs(yMax - yMin) < 10 ? 1 : 0), 4, yy + 4);
+  }
+  g.fillText(`t = ${t[t.length - 1].toFixed(0)} s`, w - 58, h - 6);
+  for (const s of series) {
+    g.strokeStyle = s.color; g.lineWidth = 2; g.setLineDash(s.dash || []); g.beginPath();
+    const stride = Math.max(1, Math.floor(t.length / 800));
+    for (let i = 0; i < t.length; i += stride) { const px = x(t[i]), py = y(clamp(s.y[i], yMin, yMax)); i ? g.lineTo(px, py) : g.moveTo(px, py); }
+    g.stroke(); g.setLineDash([]);
+  }
+}
+
+function loop1() {
+  const ramp = +$("ramp").value * 1000, kp = +$("kp").value * 1e-4, ki = +$("ki").value * 1e-3, boost = +$("boost").value * 1000;
+  $("rampOut").textContent = `${$("ramp").value} kW/s`; $("kpOut").textContent = $("kp").value + "e-4"; $("kiOut").textContent = $("ki").value + "e-3"; $("boostOut").textContent = `${$("boost").value} kW`;
+  const dt = 1e-3, n = 6000, pi = makePI(kp, ki, -40, 40), t = [], req = [], ref = [], out = [];
+  let pRef = 0, i = 0;
+  for (let k = 0; k < n; k++) {
+    const tk = k * dt, pCmd = tk >= 3 ? boost : 10000;
+    pRef += clamp(pCmd - pRef, -ramp * dt, ramp * dt);
+    const iRef = clamp(pRef / V_EV + pi(pRef - V_EV * i, dt), -40, 40);
+    i += (iRef - i) * dt / 0.005;
+    t.push(tk); req.push(pCmd / 1000); ref.push(pRef / 1000); out.push(V_EV * i / 1000);
+  }
+  const seg = out.slice(0, 3000), over = Math.max(0, (Math.max(...seg) - 10) / 10 * 100);
+  let settle = 0; seg.forEach((v, k) => { if (Math.abs(v - 10) > 0.2) settle = k * dt; });
+  $("k1a").textContent = `${over.toFixed(2)} %`; $("k1b").textContent = `${settle.toFixed(2)} s`;
+  plot($("c1"), t, [{ y: req, color: css("--muted"), dash: [4, 4] }, { y: ref, color: css("--s2") }, { y: out, color: css("--s1") }], 0, 13);
+}
+
+function loop2() {
+  const lic = $("lic").checked, lkp = +$("lkp").value, stepW = +$("step").value * 1000;
+  $("lkpOut").textContent = lkp; $("stepOut").textContent = `${$("step").value} kW`;
+  const E = 104, Ro = 0.05, Rs = 0.0211, tauS = 1.5, C = 0.05, dt = 2e-4, n = 60000;
+  const pi = makePI(lkp, lkp * 6, -150, 150, 1.0);
+  const i0 = 10000 / EFF / 96; let vs = Rs * i0, v = E - vs - Ro * i0, vref = v;
+  const t = [], vd = [], ist = [], il = [], ild = [];
+  let before = v, dip = 0, licPeak = 0;
+  for (let k = 0; k < n; k++) {
+    const tk = k * dt, p = tk >= 2 ? stepW : 10000, iLoad = p / EFF / Math.max(v, 1);
+    const iS = Math.max(0, (E - vs - v) / Ro);
+    vs += (Rs * iS - vs) * dt / tauS; vref += (v - vref) * dt / 1.0;
+    const iL = lic ? pi(vref - v, dt) : 0;
+    v += (iS + iL - iLoad) / C * dt;
+    if (tk < 2) before = v; else if (tk < 2.2) dip = Math.max(dip, before - v);
+    licPeak = Math.max(licPeak, Math.abs(iL));
+    if (k % 10 === 0) { t.push(tk); vd.push(v); ist.push(iS); il.push(iL); ild.push(iLoad); }
+  }
+  $("k2a").textContent = `${dip.toFixed(2)} V`; $("k2b").textContent = `${licPeak.toFixed(0)} A`;
+  const vLo = Math.min(...vd), vHi = Math.max(...vd);
+  plot($("c2"), t, [{ y: vd, color: css("--s1") }], Math.floor(vLo - 0.5), Math.ceil(vHi + 0.5));
+  plot($("c2b"), t, [{ y: ild, color: css("--muted"), dash: [4, 4] }, { y: ist, color: css("--s3") }, { y: il, color: css("--s4") }], Math.min(-10, Math.min(...il)), 160);
+}
+
+function loop3() {
+  const ff = $("ff").checked, amb = +$("amb").value, ua = +$("ua").value;
+  $("ambOut").textContent = `${amb} °C`; $("uaOut").textContent = `${ua} W/K`;
+  const dt = 5, n = 216, C = 25000, pi = makePI(0.08, 0.0008, -0.9, 0.6);
+  let T = amb, boostKept = 0, peak = -99;
+  const t = [], temp = [], pw = [], cool = [];
+  for (let k = 0; k < n; k++) {
+    const tk = k * dt; let p = tk >= 300 ? 12 : 10;
+    if (T >= 52) p = Math.min(p, 10);
+    if (T >= 55) p = 10 * Math.max(0.4, 1 - (T - 55) / 10);
+    if (tk >= 300 && p > 10) boostKept += dt;
+    const gross = p / EFF, heat = 127 * gross + 0.25 * (1 - EFF) * gross * 1000;
+    const c = clamp((ff ? 0.9 * p / 10 : 0.9) + pi(T - 45, dt), 0.05, 1.5);
+    T += (heat - ua * c * (T - amb)) / C * dt;
+    if (tk >= 300) peak = Math.max(peak, T);
+    t.push(tk); temp.push(T); pw.push(p * 4); cool.push(c * 40);
+  }
+  $("k3a").textContent = `${peak.toFixed(1)} °C`; $("k3b").textContent = `${(boostKept / 60).toFixed(1)} min`;
+  plot($("c3"), t, [{ y: temp, color: css("--s2") }, { y: pw, color: css("--s1") }, { y: cool, color: css("--s3"), dash: [5, 3] }], Math.min(-25, amb), 70);
+}
+
+const MODES = [
+  ["DRY_READY / SELECTED", "OFF", "Standby", "Standby"], ["PRIME / FLOW CHECK", "OFF", "Support auxiliaries", "Activation / flow control"],
+  ["ACTIVE_POWER", "10 kW tracking", "V_DC regulation", "Closed-loop cooling"], ["BOOST", "≤ 12 kW", "Transient support", "High-flow + feed-forward"],
+  ["DERATED", "Reduced P*", "V_DC regulation", "Maximum allowed cooling"], ["RAMP_DOWN", "Controlled reduction", "Transient support", "Continue cooling"],
+  ["PURGE / COOLDOWN", "OFF", "Aux support", "Purge / cooldown"], ["FAULT", "Hard disable", "Isolate as required", "Safe shutdown path"],
+];
+$("modes").innerHTML = MODES.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join("")}</tr>`).join("");
+
+const all = () => { loop1(); loop2(); loop3(); };
+["ramp", "kp", "ki", "boost"].forEach(id => $(id).addEventListener("input", loop1));
+["lic", "lkp", "step"].forEach(id => $(id).addEventListener("input", loop2));
+["ff", "amb", "ua"].forEach(id => $(id).addEventListener("input", loop3));
+window.addEventListener("resize", all);
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", all);
+all();
+</script>
+</body>
+</html>

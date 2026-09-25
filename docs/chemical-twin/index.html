@@ -1,0 +1,2303 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Document-aligned 3D system and electrochemical digital twin for the Metalyte PRO-MPRO aluminum-air rescue system.">
+  <title>MPRO Chemical Twin</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #071018;
+      --panel: rgba(13, 28, 40, 0.94);
+      --panel-2: #0b1a26;
+      --line: #20394a;
+      --line-soft: rgba(130, 170, 195, 0.16);
+      --text: #f3f8fb;
+      --muted: #9eb2bf;
+      --water: #38bdf8;
+      --air: #65d79d;
+      --gas: #c084fc;
+      --electric: #facc15;
+      --control: #fb7185;
+      --product: #f3a6c8;
+      --safe: #4ade80;
+      --warn: #f59e0b;
+      --fault: #f87171;
+      --inactive: #526777;
+      --shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+      --radius: 16px;
+      --mono: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { min-width: 320px; background: var(--bg); }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: var(--sans);
+      background:
+        radial-gradient(circle at 18% 0%, rgba(56, 189, 248, 0.11), transparent 34rem),
+        radial-gradient(circle at 88% 8%, rgba(192, 132, 252, 0.08), transparent 30rem),
+        linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+        var(--bg);
+      background-size: auto, auto, 28px 28px, 28px 28px, auto;
+    }
+
+    button, input, select { font: inherit; }
+    button { color: inherit; }
+    button:focus-visible, input:focus-visible, select:focus-visible {
+      outline: 2px solid var(--water);
+      outline-offset: 2px;
+    }
+
+    .app-shell { width: min(1920px, 100%); margin: 0 auto; padding-bottom: 28px; }
+
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 13px 20px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(7, 16, 24, 0.92);
+      backdrop-filter: blur(16px);
+    }
+
+    .brand { display: flex; align-items: center; gap: 13px; min-width: 0; }
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      flex: 0 0 auto;
+      border: 1px solid rgba(56, 189, 248, 0.58);
+      border-radius: 12px;
+      color: var(--water);
+      background: linear-gradient(145deg, #102d40, #081821);
+      box-shadow: 0 0 26px rgba(56, 189, 248, 0.14);
+      font: 800 13px var(--mono);
+    }
+
+    .brand-copy { min-width: 0; }
+    .brand-copy h1 { margin: 0; font-size: clamp(16px, 2vw, 22px); letter-spacing: -0.025em; }
+    .brand-copy p { margin: 3px 0 0; color: var(--muted); font-size: 11px; }
+
+    .header-status { display: flex; justify-content: flex-end; align-items: center; gap: 9px; flex-wrap: wrap; }
+    .badge, .state-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 29px;
+      padding: 5px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #0b1a26;
+      color: var(--muted);
+      font: 700 10.5px var(--mono);
+      letter-spacing: 0.03em;
+      white-space: nowrap;
+    }
+
+    .badge.concept { color: #fed7aa; border-color: rgba(245, 158, 11, 0.48); }
+    .state-badge { color: var(--state-color, var(--water)); border-color: color-mix(in srgb, var(--state-color, var(--water)) 48%, transparent); }
+    .state-badge::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; box-shadow: 0 0 9px currentColor; }
+
+    .state-rail {
+      display: grid;
+      grid-template-columns: repeat(9, minmax(118px, 1fr));
+      gap: 8px;
+      margin: 12px 12px 0;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(9, 22, 32, 0.82);
+      box-shadow: var(--shadow);
+      overflow-x: auto;
+    }
+
+    .state-step {
+      position: relative;
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      align-items: center;
+      gap: 8px;
+      min-height: 47px;
+      padding: 8px 9px;
+      border: 1px solid var(--line-soft);
+      border-radius: 11px;
+      background: #091721;
+      color: var(--inactive);
+    }
+
+    .state-step:not(:last-child)::after {
+      content: "";
+      position: absolute;
+      right: -9px;
+      top: 50%;
+      width: 9px;
+      height: 1px;
+      background: var(--line);
+    }
+
+    .state-step .n {
+      display: grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      border: 1px solid currentColor;
+      border-radius: 50%;
+      font: 800 11px var(--mono);
+    }
+
+    .state-step .label { font-size: 10.5px; font-weight: 800; letter-spacing: 0.035em; }
+    .state-step .hint { display: block; margin-top: 2px; color: var(--muted); font-size: 8.5px; font-weight: 500; }
+    .state-step.complete { color: var(--safe); background: rgba(34, 197, 94, 0.06); }
+    .state-step.current { color: var(--state-color, var(--water)); border-color: currentColor; background: color-mix(in srgb, currentColor 9%, #091721); box-shadow: inset 0 0 22px color-mix(in srgb, currentColor 10%, transparent); }
+    .state-step.current .n { box-shadow: 0 0 13px color-mix(in srgb, currentColor 38%, transparent); }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: minmax(245px, 292px) minmax(520px, 1fr) minmax(265px, 320px);
+      gap: 12px;
+      padding: 12px;
+      align-items: start;
+    }
+
+    .column { display: grid; gap: 12px; min-width: 0; }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(145deg, rgba(14, 31, 44, 0.96), rgba(9, 22, 32, 0.96));
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line-soft);
+    }
+
+    .panel-header h2, .panel-header h3 { margin: 0; font-size: 12px; letter-spacing: 0.025em; }
+    .panel-header .sub { color: var(--muted); font: 600 9.5px var(--mono); text-align: right; }
+    .panel-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+    .btn.export-btn { width: auto; padding: 6px 9px; color: #d7f4ff; border-color: rgba(56, 189, 248, 0.45); background: rgba(56, 189, 248, 0.08); font: 750 8.5px var(--mono); white-space: nowrap; }
+    .btn.export-btn:hover:not(:disabled) { border-color: var(--water); background: rgba(56, 189, 248, 0.15); }
+    .panel-body { padding: 13px 14px; }
+
+    .section-label { margin: 0 0 7px; color: var(--muted); font: 800 9px var(--mono); letter-spacing: 0.09em; text-transform: uppercase; }
+
+    .control-stack { display: grid; gap: 12px; }
+    .field { display: grid; gap: 5px; }
+    .field-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+    .field-row label { color: #d7e4eb; font-size: 10.5px; font-weight: 650; }
+    .field-row output { color: var(--water); font: 750 10.5px var(--mono); }
+    input[type="range"] { width: 100%; accent-color: var(--water); cursor: pointer; }
+    input[type="range"]:disabled { opacity: 0.42; cursor: not-allowed; }
+    select {
+      width: 100%;
+      padding: 7px 9px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: #07151f;
+      color: var(--text);
+      font-size: 10.5px;
+    }
+
+    .button-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+    .btn {
+      min-height: 36px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #0b1d2a;
+      color: #dce8ee;
+      font-size: 10.5px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: 140ms ease;
+    }
+    .btn:hover:not(:disabled) { transform: translateY(-1px); border-color: #477188; background: #102737; }
+    .btn:disabled { opacity: 0.38; cursor: not-allowed; }
+    .btn.primary { color: #041018; border-color: #6dd5fa; background: linear-gradient(135deg, #38bdf8, #7dd3fc); }
+    .btn.safe { color: #04120b; border-color: #86efac; background: linear-gradient(135deg, #4ade80, #86efac); }
+    .btn.warn { color: #211000; border-color: #fbbf24; background: linear-gradient(135deg, #f59e0b, #fbbf24); }
+    .btn.danger { border-color: rgba(248, 113, 113, 0.62); color: #fecaca; background: rgba(127, 29, 29, 0.44); }
+
+    .calibration-note {
+      padding: 10px;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: 11px;
+      background: rgba(120, 53, 15, 0.13);
+      color: #fdd6aa;
+      font-size: 9.5px;
+      line-height: 1.45;
+    }
+
+    .cartridge-list { display: grid; gap: 8px; }
+    .cartridge-card {
+      position: relative;
+      display: grid;
+      grid-template-columns: 38px 1fr auto;
+      align-items: center;
+      gap: 9px;
+      width: 100%;
+      min-height: 61px;
+      padding: 9px;
+      border: 1px solid var(--line-soft);
+      border-radius: 12px;
+      background: #081722;
+      text-align: left;
+      cursor: pointer;
+    }
+    .cartridge-card:hover:not(:disabled) { border-color: #3a6176; }
+    .cartridge-card.selected { border-color: var(--water); box-shadow: inset 0 0 20px rgba(56, 189, 248, 0.08); }
+    .cartridge-card.active { border-color: var(--safe); box-shadow: inset 0 0 20px rgba(74, 222, 128, 0.08); }
+    .cartridge-card.spent { opacity: 0.66; cursor: default; }
+    .cartridge-icon { display: grid; place-items: center; width: 38px; height: 43px; border: 1px solid #446273; border-radius: 8px; color: var(--water); font: 800 12px var(--mono); background: linear-gradient(90deg, #0d2533 25%, #102e3e 25% 50%, #0d2533 50% 75%, #102e3e 75%); }
+    .cartridge-card.spent .cartridge-icon { color: var(--product); border-color: #7b586b; background: #241a23; }
+    .cartridge-copy strong { display: block; font-size: 10.5px; }
+    .cartridge-copy span { display: block; margin-top: 3px; color: var(--muted); font-size: 8.8px; }
+    .cartridge-state { font: 750 8.5px var(--mono); color: var(--state-color, var(--water)); text-align: right; }
+
+    .mini-specs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; }
+    .mini-spec { padding: 7px 8px; border: 1px solid var(--line-soft); border-radius: 9px; background: #07151f; }
+    .mini-spec span { display: block; color: var(--muted); font-size: 8px; }
+    .mini-spec strong { display: block; margin-top: 2px; color: #e7f2f6; font: 700 10px var(--mono); }
+
+    .view-tabs { display: flex; gap: 6px; padding: 8px; border-bottom: 1px solid var(--line-soft); background: rgba(6, 18, 26, 0.72); overflow-x: auto; }
+    .view-tab { flex: 1 0 auto; min-width: 108px; padding: 8px 10px; border: 1px solid transparent; border-radius: 9px; background: transparent; color: var(--muted); font-size: 10px; font-weight: 800; cursor: pointer; }
+    .view-tab.active { color: var(--water); border-color: rgba(56, 189, 248, 0.42); background: rgba(56, 189, 248, 0.08); }
+    .view { display: none; min-height: 350px; padding: 10px; }
+    .view.active { display: block; }
+
+    .view.three-view { min-height: 450px; padding: 0; }
+    .three-stage {
+      position: relative;
+      width: 100%;
+      height: 450px;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 50% 42%, rgba(30, 74, 98, 0.32), transparent 42%),
+        linear-gradient(180deg, #081721, #050d14);
+    }
+    #threeStage, #systemThreeStage { position: absolute; inset: 0; }
+    #threeStage canvas, #systemThreeStage canvas { display: block; width: 100%; height: 100%; cursor: grab; touch-action: none; }
+    #threeStage canvas:active, #systemThreeStage canvas:active { cursor: grabbing; }
+    .three-overlay {
+      position: absolute;
+      z-index: 3;
+      padding: 9px 10px;
+      border: 1px solid rgba(80, 121, 145, 0.55);
+      border-radius: 10px;
+      background: rgba(5, 15, 23, 0.83);
+      backdrop-filter: blur(9px);
+      pointer-events: none;
+    }
+    .three-title { top: 12px; left: 12px; max-width: 310px; }
+    .three-title strong { display: block; color: var(--water); font-size: 11px; }
+    .three-title span { display: block; margin-top: 3px; color: var(--muted); font-size: 8.5px; line-height: 1.35; }
+    .three-help { right: 12px; bottom: 12px; color: var(--muted); font: 650 8px var(--mono); }
+    .three-legend { left: 12px; bottom: 12px; display: flex; flex-wrap: wrap; gap: 7px 10px; max-width: 420px; }
+    .three-legend span { display: inline-flex; align-items: center; gap: 5px; color: #c8d7de; font-size: 8px; }
+    .three-legend i { width: 7px; height: 7px; border-radius: 50%; background: var(--dot); box-shadow: 0 0 7px var(--dot); }
+    .three-fallback { display: none; place-items: center; height: 100%; padding: 30px; color: var(--muted); text-align: center; }
+    .three-fallback.visible { display: grid; }
+
+    .architecture-svg, .cutaway-svg { display: block; width: 100%; height: auto; }
+    .architecture-svg text, .cutaway-svg text { font-family: var(--sans); fill: #dce9ee; }
+    .architecture-svg .small, .cutaway-svg .small { fill: var(--muted); font-size: 9px; }
+    .architecture-svg .node { fill: #0b1d2a; stroke: #315064; stroke-width: 1.2; }
+    .architecture-svg .node.active-node { stroke: var(--safe); filter: drop-shadow(0 0 5px rgba(74, 222, 128, 0.25)); }
+    .architecture-svg .node.spent-node { fill: #251a24; stroke: #7d5b70; }
+    .architecture-svg .node-title { font-size: 11px; font-weight: 800; }
+    .architecture-svg .node-sub { font-size: 8.5px; fill: var(--muted); }
+
+    .flow-path { fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; opacity: 0.22; transition: opacity 180ms ease, filter 180ms ease; }
+    .flow-path.water { stroke: var(--water); }
+    .flow-path.air { stroke: var(--air); }
+    .flow-path.gas { stroke: var(--air); }
+    .flow-path.electric { stroke: var(--electric); }
+    .flow-path.control { stroke: var(--control); stroke-width: 2; stroke-dasharray: 5 5; }
+    .flow-path.active { opacity: 1; stroke-dasharray: 9 7; animation: flowDash 0.78s linear infinite; filter: drop-shadow(0 0 4px currentColor); }
+    .flow-path.control.active { stroke-dasharray: 5 5; animation-duration: 1.15s; }
+    @keyframes flowDash { to { stroke-dashoffset: -32; } }
+
+    .flow-key { display: flex; flex-wrap: wrap; gap: 8px 13px; padding: 0 11px 11px; color: var(--muted); font-size: 8.8px; }
+    .flow-key span { display: inline-flex; align-items: center; gap: 5px; }
+    .flow-key i { width: 18px; height: 3px; border-radius: 2px; background: currentColor; }
+
+    .cycle-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; padding: 9px; }
+    .cycle-stage { position: relative; min-height: 92px; padding: 12px 11px; border: 1px solid var(--line-soft); border-radius: 12px; background: #081722; }
+    .cycle-stage.current { border-color: var(--state-color, var(--water)); box-shadow: inset 0 0 20px color-mix(in srgb, var(--state-color, var(--water)) 10%, transparent); }
+    .cycle-stage.complete { border-color: rgba(74, 222, 128, 0.38); }
+    .cycle-stage .icon { font: 800 19px var(--mono); color: var(--state-color, var(--water)); }
+    .cycle-stage h3 { margin: 8px 0 3px; font-size: 10.5px; }
+    .cycle-stage p { margin: 0; color: var(--muted); font-size: 8.8px; line-height: 1.4; }
+
+    .species-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 10px; }
+    .species-column { min-height: 305px; padding: 12px; border: 1px solid var(--line-soft); border-radius: 13px; background: #081722; }
+    .species-column h3 { margin: 0 0 12px; font-size: 11px; color: var(--column-color); }
+    .species-chip { display: flex; align-items: center; justify-content: space-between; gap: 7px; min-height: 45px; margin-bottom: 8px; padding: 8px 9px; border: 1px solid var(--line-soft); border-left: 3px solid var(--chip-color, var(--water)); border-radius: 9px; background: #0a1b27; }
+    .species-chip strong { font: 800 12px var(--mono); }
+    .species-chip span { color: var(--muted); font-size: 8.2px; text-align: right; }
+    .species-chip.active { border-color: var(--chip-color, var(--water)); box-shadow: 0 0 18px color-mix(in srgb, var(--chip-color, var(--water)) 12%, transparent); }
+
+    .cutaway-wrap { position: relative; padding: 8px 10px 11px; }
+    .cutaway-svg .shell { fill: #0a1a25; stroke: #345468; stroke-width: 2; }
+    .cutaway-svg .wet-zone { fill: rgba(56, 189, 248, 0.10); stroke: rgba(56, 189, 248, 0.46); }
+    .cutaway-svg .cathode { fill: #173e35; stroke: var(--air); }
+    .cutaway-svg .separator { fill: #dbe8ed; opacity: 0.7; }
+    .cutaway-svg .anode { fill: none; stroke: #b9c7ce; stroke-width: 8; stroke-linejoin: bevel; filter: drop-shadow(0 0 3px rgba(220, 232, 238, 0.22)); }
+    .cutaway-svg .sachet { fill: #654e16; stroke: var(--electric); }
+    .cutaway-svg .sump { fill: #16141c; stroke: #6b5061; }
+    .cutaway-svg .product-fill { fill: var(--product); opacity: 0.72; transition: 240ms ease; }
+    .cutaway-svg .bubble { fill: var(--gas); opacity: 0; }
+    .cutaway-svg .droplet { fill: var(--water); opacity: 0; }
+    .cutaway-svg .electron { fill: var(--electric); opacity: 0; }
+    body[data-phase="WATER_ADMISSION"] .cutaway-svg .droplet,
+    body[data-phase="PRIME_FLOW_CHECK"] .cutaway-svg .droplet,
+    body[data-phase="ACTIVE_POWER"] .cutaway-svg .droplet,
+    body[data-phase="DERATED"] .cutaway-svg .droplet { opacity: 0.85; animation: drop 1.15s linear infinite; }
+    body[data-phase="ACTIVE_POWER"] .cutaway-svg .bubble,
+    body[data-phase="DERATED"] .cutaway-svg .bubble,
+    body[data-phase="RAMP_DOWN"] .cutaway-svg .bubble,
+    body[data-phase="PURGE_COOLDOWN"] .cutaway-svg .bubble { opacity: 0.82; animation: rise 1.65s ease-in infinite; }
+    body[data-phase="ACTIVE_POWER"] .cutaway-svg .electron,
+    body[data-phase="DERATED"] .cutaway-svg .electron,
+    body[data-phase="RAMP_DOWN"] .cutaway-svg .electron { opacity: 1; animation: electron 1s linear infinite; }
+    .d2 { animation-delay: -0.4s !important; }
+    .d3 { animation-delay: -0.8s !important; }
+    @keyframes drop { from { transform: translateY(-5px); } to { transform: translateY(52px); } }
+    @keyframes rise { from { transform: translateY(15px); } to { transform: translateY(-47px); opacity: 0.05; } }
+    @keyframes electron { from { transform: translateX(-22px); } to { transform: translateX(82px); } }
+
+    .metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+    .metric { min-height: 69px; padding: 9px; border: 1px solid var(--line-soft); border-radius: 11px; background: #07151f; }
+    .metric span { display: block; color: var(--muted); font-size: 8.5px; }
+    .metric strong { display: block; margin-top: 5px; color: var(--metric-color, var(--text)); font: 750 16px var(--mono); letter-spacing: -0.035em; }
+    .metric small { display: block; margin-top: 2px; color: #6f8998; font-size: 7.8px; }
+    .meter { height: 4px; margin-top: 6px; border-radius: 3px; overflow: hidden; background: #132633; }
+    .meter > i { display: block; width: 0; height: 100%; border-radius: inherit; background: var(--metric-color, var(--water)); transition: width 220ms ease; }
+
+    .status-card { padding: 12px; border: 1px solid var(--line-soft); border-radius: 12px; background: #07151f; }
+    .status-card strong { display: block; color: var(--state-color, var(--water)); font-size: 11px; }
+    .status-card p { min-height: 34px; margin: 5px 0 0; color: var(--muted); font-size: 9px; line-height: 1.45; }
+    .mission-progress { height: 7px; margin-top: 9px; border-radius: 5px; overflow: hidden; background: #142733; }
+    .mission-progress i { display: block; width: 0; height: 100%; background: linear-gradient(90deg, var(--water), var(--safe), var(--electric)); transition: width 220ms ease; }
+
+    .log { display: grid; gap: 6px; max-height: 170px; overflow: auto; }
+    .log-entry { display: grid; grid-template-columns: 43px 1fr; gap: 8px; padding-bottom: 6px; border-bottom: 1px dashed var(--line-soft); }
+    .log-entry time { color: var(--water); font: 700 8.5px var(--mono); }
+    .log-entry span { color: #bfd0d9; font-size: 8.8px; line-height: 1.35; }
+
+    .trend-wrap { padding: 8px 11px 12px; }
+    #trendCanvas { display: block; width: 100%; height: 155px; border: 1px solid var(--line-soft); border-radius: 10px; background: #06131c; }
+    .trend-key { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 7px; color: var(--muted); font-size: 8.3px; }
+    .trend-key span::before { content: ""; display: inline-block; width: 13px; height: 2px; margin-right: 5px; vertical-align: middle; background: var(--key); }
+
+    .equations-panel { margin: 0 12px 12px; }
+    .equation-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px; padding: 10px; }
+    .equation-card { min-height: 99px; padding: 11px; border: 1px solid var(--line-soft); border-radius: 12px; background: #081722; }
+    .equation-card .kind { color: var(--accent); font: 800 8.5px var(--mono); text-transform: uppercase; letter-spacing: 0.08em; }
+    .equation-card .formula { margin-top: 10px; color: #f5fbfd; font: 750 13px/1.55 var(--mono); }
+    .equation-card .meaning { margin-top: 6px; color: var(--muted); font-size: 8.5px; }
+    .equation-note { padding: 0 12px 12px; color: var(--muted); font-size: 9px; line-height: 1.45; }
+
+    .footer-note { margin: 0 12px; color: #76909e; font-size: 8.5px; text-align: center; }
+
+    @media (max-width: 1260px) {
+      .dashboard { grid-template-columns: 260px 1fr; }
+      .right-column { grid-column: 1 / -1; grid-template-columns: 1.1fr 0.9fr 1fr; }
+      .right-column .panel { min-width: 0; }
+      .equation-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 870px) {
+      .app-header { position: static; align-items: flex-start; flex-direction: column; }
+      .header-status { justify-content: flex-start; }
+      .dashboard { grid-template-columns: 1fr; }
+      .left-column, .center-column, .right-column { grid-column: auto; }
+      .right-column { grid-template-columns: 1fr; }
+      .state-rail { grid-template-columns: repeat(9, 135px); }
+      .cycle-grid, .species-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 560px) {
+      .dashboard { padding: 8px; }
+      .state-rail, .equations-panel { margin-left: 8px; margin-right: 8px; }
+      .brand-copy p, .badge:not(.concept) { display: none; }
+      .panel-actions .sub { display: none; }
+      .cycle-grid, .species-grid, .equation-grid { grid-template-columns: 1fr; }
+      .metric strong { font-size: 14px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
+    }
+    .gate-list { display: grid; gap: 5px; margin-top: 8px; }
+    .gate { display: grid; grid-template-columns: 16px 1fr; gap: 7px; align-items: start; padding: 6px 8px; border: 1px solid var(--line-soft); border-radius: 8px; font-size: 10.5px; }
+    .gate b { font: 800 10px var(--mono); }
+    .gate.ok b { color: var(--safe); } .gate.warn b { color: var(--warn); } .gate.fail b { color: #ef4444; }
+    .gate small { display: block; color: var(--muted); font-size: 9.5px; }
+    .gate-controls { display: grid; gap: 5px; font-size: 10.5px; color: var(--muted); }
+    .gate-controls label { display: flex; gap: 6px; align-items: center; }
+    .gate-controls select { background: transparent; color: inherit; border: 1px solid var(--line); border-radius: 6px; padding: 3px; font-size: 10.5px; }
+    .gate-controls select option { color: #0b1620; }
+    .layer { padding: 7px 9px; border-left: 3px solid var(--layer-color, var(--water)); background: rgba(56,189,248,0.04); border-radius: 6px; margin-bottom: 6px; font-size: 10.5px; }
+    .layer h3 { margin: 0 0 3px; font: 800 9px var(--mono); letter-spacing: .08em; color: var(--layer-color, var(--water)); }
+    .layer p { margin: 2px 0; }
+  </style>
+</head>
+<body data-phase="DRY_READY">
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-mark">MPRO</div>
+        <div class="brand-copy">
+          <h1>Chemical Digital Twin <span style="color:var(--water)">v8 · Configuration 2</span></h1>
+          <p>3 integrated wet cartridges · shared dry BOP · Configuration 2 gates · <a href="../" style="color:var(--water)">software twin</a> · <a href="../control-twin/" style="color:var(--water)">control twin</a> · <a href="../integration-twin/" style="color:var(--water)">integration twin</a> · <a href="../hub.html" style="color:var(--water)">all twins</a></p>
+        </div>
+      </div>
+      <div class="header-status">
+        <span class="badge concept">CONCEPT-CALIBRATED · NOT TEST VALIDATED</span>
+        <span class="badge">KOH-4M · FDF-3 · 10/12 kW</span>
+        <span id="headerState" class="state-badge">DRY READY</span>
+      </div>
+    </header>
+
+    <section id="stateRail" class="state-rail" aria-label="Mission state progression"></section>
+
+    <main class="dashboard">
+      <aside class="column left-column">
+        <section class="panel">
+          <div class="panel-header">
+            <h2>Mission Controls</h2>
+            <span id="missionClock" class="sub">00:00 · PAUSED</span>
+          </div>
+          <div class="panel-body control-stack">
+            <div>
+              <p class="section-label">Concept operating point</p>
+              <div class="field">
+                <div class="field-row"><label for="powerInput">EV output target</label><output id="powerOutput">10.0 kW</output></div>
+                <input id="powerInput" type="range" min="10" max="12" step="0.25" value="10">
+              </div>
+            </div>
+            <div class="field">
+              <div class="field-row"><label for="waterInput">Water the driver pours (total)</label><output id="waterOutput">1.8 L</output></div>
+              <input id="waterInput" type="range" min="1.6" max="2.3" step="0.1" value="1.8">
+            </div>
+            <div class="field">
+              <div class="field-row"><label for="speedInput">Simulation speed</label><output id="speedOutput">×120</output></div>
+              <input id="speedInput" type="range" min="30" max="300" step="30" value="120">
+            </div>
+            <div class="button-grid">
+              <button id="autoBtn" class="btn primary">Run auto mission</button>
+              <button id="advanceBtn" class="btn safe">Activate selected</button>
+              <button id="pauseBtn" class="btn">Resume</button>
+              <button id="faultBtn" class="btn warn">Inject vent fault</button>
+              <button id="clearFaultBtn" class="btn">Clear fault</button>
+              <button id="cancelFillBtn" class="btn">Cancel fill (stays dry)</button>
+              <button id="resetBtn" class="btn danger">Reset demo</button>
+            </div>
+            <div class="calibration-note">
+              Document-aligned concept model: 10 kW nominal EV output, up to 12 kW thermal-limited Boost and 3 kWh usable energy. Nominal transfer is 18 minutes; Boost-only transfer is 15 minutes. Configuration 2: the pre-activation gates, the FILL_SESSION with the valve closed until 1.8 L is measured, and continuous IMD monitoring are active. The reaction clock starts at real water admission. Chemistry, H₂ rate and detailed thermal response remain validation items.
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <h2>Configuration 2 Mission Gates</h2>
+            <span id="gateSummary" class="sub">CHECKING</span>
+          </div>
+          <div class="panel-body">
+            <div class="gate-controls">
+              <label>Site <select id="envInput">
+                <option value="open">Open air</option>
+                <option value="wall-ok">Next to a wall · diffuser on open side</option>
+                <option value="wall">Next to a wall · not confirmed</option>
+                <option value="enclosed">Enclosed space</option>
+              </select></label>
+              <label><input id="ventsClearInput" type="checkbox" checked> Vents clear of cargo [5.2]</label>
+              <label><input id="cableInput" type="checkbox" checked> CABLE_DEPLOYED</label>
+              <label><input id="ventInput" type="checkbox" checked> VENT_DEPLOYED</label>
+              <label><input id="diffuserInput" type="checkbox" checked> Driver confirms diffuser zone outside [2.1]</label>
+              <label><input id="hvilInput" type="checkbox" checked> HVIL continuous over window [8.1]</label>
+              <label><input id="cpInput" type="checkbox" checked> CP level valid</label>
+              <label>IMD 490 <select id="imdInput">
+                <option value="normal">Normal (2 MΩ)</option>
+                <option value="warning">Warning band (150 kΩ)</option>
+                <option value="block">Below block threshold (30 kΩ)</option>
+              </select></label>
+              <label><input id="isoInput" type="checkbox" checked> ISO 15118 communication OK (else DIN 70121)</label>
+            </div>
+            <div id="gateList" class="gate-list"></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <h2>Consumable Cartridges</h2>
+            <span id="remainingEvents" class="sub">3 EVENTS READY</span>
+          </div>
+          <div class="panel-body">
+            <div id="cartridgeList" class="cartridge-list"></div>
+            <div class="mini-specs">
+              <div class="mini-spec"><span>Dry KOH</span><strong>404 g / cart.</strong></div>
+              <div class="mini-spec"><span>Engineered Al</span><strong>1.15 kg / cart.</strong></div>
+              <div class="mini-spec"><span>Effective electrolyte</span><strong>4.0 M target</strong></div>
+              <div class="mini-spec"><span>Products</span><strong>retained wet-side</strong></div>
+              <div class="mini-spec"><span>Gross nominal output</span><strong>10.9–11.0 kW</strong></div>
+              <div class="mini-spec"><span>Stack envelope</span><strong>80–110 VDC</strong></div>
+              <div class="mini-spec"><span>Nominal current</span><strong>110–115 A</strong></div>
+              <div class="mini-spec"><span>Active area / series count</span><strong>4.5 m² / TBD</strong></div>
+              <div class="mini-spec"><span>Cartridge volume</span><strong>5.5–6.5 L</strong></div>
+              <div class="mini-spec"><span>Dry / spent mass</span><strong>2.8–3.0 / 6.2–6.5 kg</strong></div>
+              <div class="mini-spec" style="grid-column:1 / -1"><span>Selected anode alloy</span><strong>Al-0.5Mg-0.05Ga-0.05In-0.10Sn wt.%</strong></div>
+              <div class="mini-spec"><span>Control additive</span><strong>stannate + organic inhibitor</strong></div>
+              <div class="mini-spec"><span>Air cathode</span><strong>Ag-enhanced MnO₂ / C / PTFE GDL</strong></div>
+            </div>
+          </div>
+        </section>
+      </aside>
+
+      <section class="column center-column">
+        <section class="panel">
+          <div class="panel-header">
+            <h2>System & Chemistry Views</h2>
+            <div class="panel-actions">
+              <span class="sub">ONE CARTRIDGE ACTIVE AT A TIME</span>
+              <button id="export3dBtn" class="btn export-btn" type="button" title="Download the active 3D view as PNG">EXPORT ACTIVE 3D PNG</button>
+            </div>
+          </div>
+          <div class="view-tabs" role="tablist" aria-label="Digital twin views">
+            <button class="view-tab active" data-view="system3d" role="tab" aria-selected="true">3D system twin</button>
+            <button class="view-tab" data-view="twin3d" role="tab" aria-selected="false">3D cell cutaway</button>
+            <button class="view-tab" data-view="system" role="tab" aria-selected="false">Functional flow</button>
+            <button class="view-tab" data-view="cycle" role="tab" aria-selected="false">Reaction cycle</button>
+            <button class="view-tab" data-view="species" role="tab" aria-selected="false">Species map</button>
+          </div>
+
+          <div id="system3dView" class="view three-view active" role="tabpanel">
+            <div class="three-stage">
+              <div id="systemThreeStage" aria-label="Interactive 3D system-level twin of the MPRO suitcase, three cartridges and shared dry BOP"></div>
+              <div id="systemThreeFallback" class="three-fallback">The system-level 3D renderer is unavailable. The functional-flow view remains usable.</div>
+              <div class="three-overlay three-title"><strong>Interactive MPRO suitcase twin</strong><span>720 × 520 × 480 mm enclosure · three 180 × 160 × 300 mm integrated wet cartridges · shared dry BOP · CCS2 + external vent umbilical</span></div>
+              <div class="three-overlay" style="top:12px;right:12px;max-width:245px;color:var(--muted);font-size:8.3px;line-height:1.45"><strong style="display:block;color:#e7f2f6;margin-bottom:3px">SHARED DRY BOP</strong>water meter/selector · filter/blower · DC link/LIC · isolated buck-boost DC/DC · main controller + independent safety supervisor</div>
+              <div class="three-overlay three-legend" aria-label="System 3D flow legend">
+                <span><i style="--dot:var(--water)"></i>water / electrolyte</span>
+                <span><i style="--dot:var(--air)"></i>air / gas</span>
+                <span><i style="--dot:var(--electric)"></i>electrical</span>
+                <span><i style="--dot:var(--control)"></i>control / safety</span>
+              </div>
+              <div class="three-overlay three-help">DRAG TO ORBIT · WHEEL TO ZOOM</div>
+            </div>
+          </div>
+
+          <div id="twin3dView" class="view three-view" role="tabpanel">
+            <div class="three-stage">
+              <div id="threeStage" aria-label="Interactive 3D cutaway of the active aluminum-air cartridge"></div>
+              <div id="threeFallback" class="three-fallback">The 3D renderer is unavailable. The system-flow and cutaway views remain fully usable.</div>
+              <div class="three-overlay three-title"><strong>Interactive FDF-3 KOH cartridge</strong><span>engineered Al accordion · Ag-enhanced double-face GDL cathodes · 404 g dry KOH · internal wet loop + heat interface · sealed product sump</span></div>
+              <div class="three-overlay" style="top:12px;right:12px;max-width:220px;color:var(--muted);font-size:8.3px;line-height:1.45"><strong style="display:block;color:#e7f2f6;margin-bottom:3px">INTEGRATED WET ZONE</strong>reaction channels · internal circulation · product sump · headspace/demister · one-way gas outlet. No active electrolyte leaves the cartridge.</div>
+              <div class="three-overlay three-legend" aria-label="3D species legend">
+                <span><i style="--dot:var(--water)"></i>OH⁻ / water</span>
+                <span><i style="--dot:var(--electric)"></i>e⁻</span>
+                <span><i style="--dot:var(--gas)"></i>Al(OH)₄⁻ / H₂</span>
+                <span><i style="--dot:var(--product)"></i>Al(OH)₃ product</span>
+                <span><i style="--dot:var(--air)"></i>air cathodes</span>
+              </div>
+              <div class="three-overlay three-help">DRAG TO ORBIT · WHEEL TO ZOOM</div>
+            </div>
+          </div>
+
+          <div id="systemView" class="view" role="tabpanel">
+            <svg class="architecture-svg" viewBox="0 0 920 345" role="img" aria-label="MPRO system flow architecture">
+              <defs>
+                <marker id="arrowWater" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 Z" fill="#38bdf8"/></marker>
+                <marker id="arrowAir" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 Z" fill="#65d79d"/></marker>
+                <marker id="arrowGas" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 Z" fill="#c084fc"/></marker>
+                <marker id="arrowElectric" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 Z" fill="#facc15"/></marker>
+                <marker id="arrowControl" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 Z" fill="#fb7185"/></marker>
+              </defs>
+
+              <rect class="node" x="20" y="26" width="130" height="58" rx="10"/>
+              <text class="node-title" x="85" y="50" text-anchor="middle">Measured water</text>
+              <text class="node-sub" x="85" y="67" text-anchor="middle">1.8 L target · verified</text>
+
+              <rect class="node" x="20" y="139" width="130" height="58" rx="10"/>
+              <text class="node-title" x="85" y="163" text-anchor="middle">Air inlet + blower</text>
+              <text class="node-sub" x="85" y="180" text-anchor="middle">shared reusable BOP</text>
+
+              <rect class="node" x="20" y="252" width="130" height="58" rx="10"/>
+              <text class="node-title" x="85" y="276" text-anchor="middle">Main controller</text>
+              <text class="node-sub" x="85" y="293" text-anchor="middle">sensors · valves · state</text>
+
+              <g id="archCartridge1"><rect class="node" x="260" y="24" width="210" height="76" rx="12"/><text class="node-title" x="365" y="49" text-anchor="middle">Integrated cartridge 1</text><text class="node-sub" x="365" y="67" text-anchor="middle">engineered Al + dry KOH + Ag/MnO₂ GDL</text><text class="node-sub" x="365" y="83" text-anchor="middle">isolated wet loop · demister · product sump</text></g>
+              <g id="archCartridge2"><rect class="node" x="260" y="134" width="210" height="76" rx="12"/><text class="node-title" x="365" y="159" text-anchor="middle">Integrated cartridge 2</text><text class="node-sub" x="365" y="177" text-anchor="middle">engineered Al + dry KOH + Ag/MnO₂ GDL</text><text class="node-sub" x="365" y="193" text-anchor="middle">isolated wet loop · demister · product sump</text></g>
+              <g id="archCartridge3"><rect class="node" x="260" y="244" width="210" height="76" rx="12"/><text class="node-title" x="365" y="269" text-anchor="middle">Integrated cartridge 3</text><text class="node-sub" x="365" y="287" text-anchor="middle">engineered Al + dry KOH + Ag/MnO₂ GDL</text><text class="node-sub" x="365" y="303" text-anchor="middle">isolated wet loop · demister · product sump</text></g>
+
+              <rect class="node" x="565" y="38" width="145" height="60" rx="10"/>
+              <text class="node-title" x="637" y="62" text-anchor="middle">Shared gas manifold</text>
+              <text class="node-sub" x="637" y="79" text-anchor="middle">post-demister gas only</text>
+
+              <rect class="node" x="565" y="143" width="145" height="60" rx="10"/>
+              <text class="node-title" x="637" y="167" text-anchor="middle">DC link + LIC</text>
+              <text class="node-sub" x="637" y="184" text-anchor="middle">shared transient support</text>
+
+              <rect class="node" x="565" y="248" width="145" height="60" rx="10"/>
+              <text class="node-title" x="637" y="272" text-anchor="middle">Isolated DC/DC</text>
+              <text class="node-sub" x="637" y="289" text-anchor="middle">10 kW nominal · 12 kW Boost</text>
+
+              <rect class="node" x="785" y="143" width="115" height="60" rx="10"/>
+              <text class="node-title" x="842" y="167" text-anchor="middle">EV interface</text>
+              <text class="node-sub" x="842" y="184" text-anchor="middle">CCS2 · 10 / 12 kW</text>
+
+              <rect class="node" x="785" y="38" width="115" height="60" rx="10"/>
+              <text class="node-title" x="842" y="62" text-anchor="middle">External vent</text>
+              <text class="node-sub" x="842" y="79" text-anchor="middle">H₂ + warm humid air</text>
+
+              <path id="waterFlow" data-flow="water" class="flow-path water" d="M150 55 H205 V62 H260" marker-end="url(#arrowWater)"/>
+              <path id="airFlow" data-flow="air" class="flow-path air" d="M150 168 H205 V172 H260" marker-end="url(#arrowAir)"/>
+              <path id="gasFlow" data-flow="gas" class="flow-path gas" d="M470 62 H565" marker-end="url(#arrowGas)"/>
+              <path id="ventFlow" data-flow="gas" class="flow-path gas" d="M710 68 H785" marker-end="url(#arrowGas)"/>
+              <path id="electricFlow1" data-flow="electric" class="flow-path electric" d="M470 172 H565" marker-end="url(#arrowElectric)"/>
+              <path id="electricFlow2" data-flow="electric" class="flow-path electric" d="M637 203 V248" marker-end="url(#arrowElectric)"/>
+              <path id="electricFlow3" data-flow="electric" class="flow-path electric" d="M710 278 H752 V173 H785" marker-end="url(#arrowElectric)"/>
+              <path id="controlFlow1" data-flow="control" class="flow-path control" d="M150 281 H208 V282 H260" marker-end="url(#arrowControl)"/>
+              <path id="controlFlow2" data-flow="control" class="flow-path control" d="M150 281 H523 V278 H565" marker-end="url(#arrowControl)"/>
+              <path id="controlFlow3" data-flow="control" class="flow-path control" d="M150 281 H525 V68 H565" marker-end="url(#arrowControl)"/>
+            </svg>
+            <div class="flow-key" aria-label="Flow legend">
+              <span style="color:var(--water)"><i></i>Water / electrolyte</span>
+              <span style="color:var(--air)"><i></i>Air / gas</span>
+              <span style="color:var(--electric)"><i></i>Electrical</span>
+              <span style="color:var(--control)"><i></i>Control</span>
+            </div>
+          </div>
+
+          <div id="cycleView" class="view" role="tabpanel">
+            <div id="cycleGrid" class="cycle-grid"></div>
+          </div>
+
+          <div id="speciesView" class="view" role="tabpanel">
+            <div class="species-grid">
+              <section class="species-column" style="--column-color:var(--water)">
+                <h3>Inputs</h3>
+                <div class="species-chip" data-species-phase="DRY_READY" style="--chip-color:#cbd5e1"><strong>Al alloy</strong><span>Al-0.5Mg-0.05Ga-0.05In-0.10Sn</span></div>
+                <div class="species-chip" data-species-phase="WATER_ADMISSION" style="--chip-color:var(--water)"><strong>H₂O</strong><span>1.8 L measured activation input</span></div>
+                <div class="species-chip" data-species-phase="ACTIVE_POWER" style="--chip-color:var(--air)"><strong>O₂</strong><span>ambient air cathode feed</span></div>
+                <div class="species-chip" data-species-phase="WATER_ADMISSION" style="--chip-color:var(--electric)"><strong>KOH</strong><span>404 g dry charge · 4 M target</span></div>
+                <div class="species-chip" data-species-phase="PRIME_FLOW_CHECK" style="--chip-color:#fbbf24"><strong>Inhibitor</strong><span>stannate + organic · loading TBD</span></div>
+              </section>
+              <section class="species-column" style="--column-color:var(--electric)">
+                <h3>Active species</h3>
+                <div class="species-chip" data-species-phase="PRIME_FLOW_CHECK" style="--chip-color:var(--water)"><strong>OH⁻</strong><span>ionic transport in internal wet loop</span></div>
+                <div class="species-chip" data-species-phase="ACTIVE_POWER" style="--chip-color:var(--electric)"><strong>e⁻</strong><span>external electrical path</span></div>
+                <div class="species-chip" data-species-phase="ACTIVE_POWER" style="--chip-color:var(--gas)"><strong>Al(OH)₄⁻</strong><span>soluble aluminate intermediate</span></div>
+                <div class="species-chip" data-species-phase="ACTIVE_POWER" style="--chip-color:#fb923c"><strong>Heat</strong><span>managed by derating + airflow</span></div>
+              </section>
+              <section class="species-column" style="--column-color:var(--product)">
+                <h3>Outputs</h3>
+                <div class="species-chip" data-species-phase="ACTIVE_POWER" style="--chip-color:var(--electric)"><strong>DC power</strong><span>regulated shared conversion</span></div>
+                <div class="species-chip" data-species-phase="RAMP_DOWN" style="--chip-color:var(--product)"><strong>Al(OH)₃</strong><span>retained slurry equivalent</span></div>
+                <div class="species-chip" data-species-phase="DERATED" style="--chip-color:var(--gas)"><strong>H₂</strong><span>rate TBD · dedicated external vent</span></div>
+                <div class="species-chip" data-species-phase="SPENT" style="--chip-color:#94a3b8"><strong>Spent cassette</strong><span>sealed for service replacement</span></div>
+              </section>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <h2>Active Cartridge Cutaway</h2>
+            <span id="cutawayCaption" class="sub">DRY · SEALED · PASSIVE</span>
+          </div>
+          <div class="cutaway-wrap">
+            <svg class="cutaway-svg" viewBox="0 0 920 330" role="img" aria-label="Cutaway of one sealed aluminum-air cartridge">
+              <rect class="shell" x="118" y="28" width="625" height="265" rx="28"/>
+              <rect class="wet-zone" x="142" y="48" width="575" height="220" rx="18"/>
+
+              <path class="flow-path water" data-flow="water" d="M20 70 H175 V91 H254" marker-end="url(#arrowWater)"/>
+              <text x="22" y="55" class="small">MEASURED WATER</text>
+              <circle class="droplet" cx="250" cy="92" r="5"/><circle class="droplet d2" cx="310" cy="92" r="5"/><circle class="droplet d3" cx="370" cy="92" r="5"/>
+
+              <rect class="sachet" x="205" y="69" width="42" height="24" rx="6"/>
+              <rect class="sachet" x="267" y="69" width="42" height="24" rx="6"/>
+              <rect class="sachet" x="329" y="69" width="42" height="24" rx="6"/>
+              <text x="288" y="60" text-anchor="middle" class="small">DISTRIBUTED DRY CHARGE</text>
+
+              <rect class="cathode" x="165" y="108" width="30" height="115" rx="7"/>
+              <rect class="separator" x="211" y="108" width="13" height="115" rx="5"/>
+              <polyline class="anode" points="264,112 307,132 264,152 307,172 264,192 307,216"/>
+              <rect class="separator" x="345" y="108" width="13" height="115" rx="5"/>
+              <rect class="cathode" x="375" y="108" width="30" height="115" rx="7"/>
+
+              <path class="flow-path air" data-flow="air" d="M85 164 H165" marker-end="url(#arrowAir)"/>
+              <path class="flow-path air" data-flow="air" d="M485 164 H405" marker-end="url(#arrowAir)"/>
+              <text x="58" y="150" class="small">AIR / O₂</text>
+              <text x="441" y="150" class="small">AIR / O₂</text>
+
+              <path class="flow-path electric" data-flow="electric" d="M277 112 V34 H610 V120" marker-end="url(#arrowElectric)"/>
+              <circle class="electron" cx="335" cy="34" r="5"/><circle class="electron d2" cx="420" cy="34" r="5"/><circle class="electron d3" cx="505" cy="34" r="5"/>
+              <text x="462" y="23" text-anchor="middle" class="small">e⁻ TO SHARED DC LINK / DC-DC</text>
+
+              <rect class="sump" x="455" y="193" width="210" height="58" rx="12"/>
+              <rect id="productFill" class="product-fill" x="458" y="247" width="204" height="0" rx="9"/>
+              <text x="560" y="218" text-anchor="middle" class="small">SEALED PRODUCT SUMP</text>
+              <text x="560" y="234" text-anchor="middle" class="small">liquid + Al(OH)₃ remain here</text>
+
+              <path class="flow-path gas" data-flow="gas" d="M660 122 V82 H825" marker-end="url(#arrowGas)"/>
+              <circle class="bubble" cx="620" cy="146" r="6"/><circle class="bubble d2" cx="648" cy="160" r="5"/><circle class="bubble d3" cx="676" cy="142" r="7"/>
+              <text x="760" y="68" text-anchor="middle" class="small">H₂ + WARM HUMID AIR → SAFE VENT</text>
+
+              <text x="180" y="244" text-anchor="middle" class="small">DOUBLE-FACE</text>
+              <text x="180" y="257" text-anchor="middle" class="small">AIR CATHODE</text>
+              <text x="286" y="244" text-anchor="middle" class="small">FOLDED Al</text>
+              <text x="286" y="257" text-anchor="middle" class="small">ACCORDION</text>
+              <text x="390" y="244" text-anchor="middle" class="small">DOUBLE-FACE</text>
+              <text x="390" y="257" text-anchor="middle" class="small">AIR CATHODE</text>
+
+              <rect x="770" y="190" width="122" height="68" rx="12" fill="#0b1d2a" stroke="#fb7185"/>
+              <text x="831" y="215" text-anchor="middle" class="node-title">Local sensors</text>
+              <text x="831" y="232" text-anchor="middle" class="small">T · P · V · flow</text>
+              <text x="831" y="247" text-anchor="middle" class="small">to shared controller</text>
+              <path class="flow-path control" data-flow="control" d="M770 225 H715" marker-end="url(#arrowControl)"/>
+            </svg>
+          </div>
+        </section>
+      </section>
+
+      <aside class="column right-column">
+        <section class="panel">
+          <div class="panel-header"><h2>Live Concept Telemetry</h2><span class="sub">ACTIVE CART. ONLY</span></div>
+          <div class="panel-body">
+            <div class="metric-grid">
+              <div class="metric" style="--metric-color:var(--electric)"><span>EV delivered power</span><strong id="metricPower">0.00 kW</strong><small>10 kW nominal · 12 kW Boost</small><div class="meter"><i id="meterPower"></i></div></div>
+              <div class="metric" style="--metric-color:var(--safe)"><span>Usable energy</span><strong id="metricEnergy">0.00 kWh</strong><small>3.00 kWh target</small><div class="meter"><i id="meterEnergy"></i></div></div>
+              <div class="metric" style="--metric-color:#7dd3fc"><span>Raw stack voltage</span><strong id="metricVoltage">0.0 V</strong><small>80–110 VDC envelope · 96 V nominal</small><div class="meter"><i id="meterVoltage"></i></div></div>
+              <div class="metric" style="--metric-color:#fde68a"><span>Stack current</span><strong id="metricCurrent">0 A</strong><small>110–115 A nominal · 130–140 A Boost</small><div class="meter"><i id="meterCurrent"></i></div></div>
+              <div class="metric" style="--metric-color:var(--warn)"><span>Core temperature</span><strong id="metricTemp">25.0 °C</strong><small>derate above 55 °C</small><div class="meter"><i id="meterTemp"></i></div></div>
+              <div class="metric" style="--metric-color:var(--gas)"><span>H₂ vent-load index</span><strong id="metricH2">0%</strong><small>absolute L/min rate is TBD</small><div class="meter"><i id="meterH2"></i></div></div>
+              <div class="metric" style="--metric-color:#cbd5e1"><span>Al remaining</span><strong id="metricAl">1.150 kg</strong><small>engineered folded foil</small><div class="meter"><i id="meterAl"></i></div></div>
+              <div class="metric" style="--metric-color:var(--product)"><span>Retained products</span><strong id="metricProduct">0.00 kg</strong><small>≤3.32 kg Al(OH)₃ equivalent · reserve TBD</small><div class="meter"><i id="meterProduct"></i></div></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header"><h2>State Logic</h2><span id="activeCartridgeLabel" class="sub">CARTRIDGE 1 SELECTED</span></div>
+          <div class="panel-body">
+            <div class="status-card">
+              <strong id="statusTitle">Ready</strong>
+              <p id="statusReason">Dry sealed cartridge selected. No water has entered the wet side.</p>
+              <div class="mission-progress"><i id="missionProgress"></i></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header"><h2>Digital Twin Layers</h2><span class="sub">MONITOR · DIAGNOSE · PROGNOSE · PRESCRIBE</span></div>
+          <div class="panel-body" id="twinLayers"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header"><h2>Live Mission Trend</h2><span class="sub">POWER · TEMP · H₂</span></div>
+          <div class="trend-wrap">
+            <canvas id="trendCanvas" width="600" height="240" aria-label="Live mission telemetry graph"></canvas>
+            <div class="trend-key"><span style="--key:var(--electric)">Power</span><span style="--key:var(--warn)">Temperature</span><span style="--key:var(--gas)">H₂ rate</span></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header"><h2>Event Log</h2><span class="sub">LATEST FIRST</span></div>
+          <div class="panel-body"><div id="eventLog" class="log"></div></div>
+        </section>
+      </aside>
+    </main>
+
+    <section class="panel equations-panel">
+      <div class="panel-header"><h2>Balanced Reaction Set</h2><span class="sub">ALKALINE ALUMINUM-AIR · PROJECT BASELINE</span></div>
+      <div class="equation-grid">
+        <article class="equation-card" style="--accent:var(--water)"><div class="kind">Anode</div><div class="formula">Al + 4OH⁻ → Al(OH)₄⁻ + 3e⁻</div><div class="meaning">Al oxidation and electron release.</div></article>
+        <article class="equation-card" style="--accent:var(--air)"><div class="kind">Cathode</div><div class="formula">O₂ + 2H₂O + 4e⁻ → 4OH⁻</div><div class="meaning">Oxygen reduction at the air cathode.</div></article>
+        <article class="equation-card" style="--accent:var(--product)"><div class="kind">Overall · simplified</div><div class="formula">4Al + 3O₂ + 6H₂O → 4Al(OH)₃</div><div class="meaning">Solid-product equivalent used in the concept mass balance.</div></article>
+        <article class="equation-card" style="--accent:var(--gas)"><div class="kind">Side reaction</div><div class="formula">2Al + 6H₂O + 2OH⁻ → 2Al(OH)₄⁻ + 3H₂↑</div><div class="meaning">Parasitic hydrogen path routed to the external vent.</div></article>
+        <article class="equation-card" style="--accent:var(--product)"><div class="kind">Aluminate precipitation</div><div class="formula">Al(OH)₄⁻ → Al(OH)₃↓ + OH⁻</div><div class="meaning">Possible precipitation into retained Al(OH)₃-rich slurry.</div></article>
+      </div>
+      <div class="equation-note">
+        In KOH alkaline solution, soluble Al(OH)₄⁻ forms first. During operation, part remains dissolved and part precipitates as Al(OH)₃; therefore the overall reaction and the ≤3.32 kg product value are shown as a simplified solid-product equivalent. All liquid and solid products remain inside the spent cartridge. H₂, warm humid air and vapor leave only through the dedicated external vent; the absolute H₂ design rate remains TBD.
+      </div>
+    </section>
+
+    <p class="footer-note">Metalyte PRO-MPRO · Configuration 2 chemical twin (v8) · selected values are design baselines, not experimentally validated performance.</p>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script>
+    (() => {
+      "use strict";
+
+      const CONFIG = Object.freeze({
+        targetEnergyKWh: 3.0,
+        nominalPowerKW: 10.0,
+        boostPowerKW: 12.0,
+        grossNominalPowerKW: 10.9,
+        grossBoostPowerKW: 13.0,
+        nominalStackVoltageV: 96,
+        stackVoltageMinV: 80,
+        stackVoltageMaxV: 110,
+        dcEfficiency: 0.92,
+        activeAreaM2: 4.5,
+        activeAlKg: 1.15,
+        productEquivalentKg: 3.32,
+        dryKohG: 404,
+        targetElectrolyteM: 4.0,
+        selectionDurationS: 8,
+        waterAdmissionDurationS: 22,
+        primeDurationS: 60,
+        rampDownDurationS: 45,
+        purgeDurationS: 120,
+        controlledDerateStartKWh: 2.72,
+        aluminumUtilization: 0.92,
+        productSumpDesignFillPct: 88,
+        boostDisableTempC: 52,
+        derateTempC: 55,
+        shutdownTempC: 65
+      });
+
+      const STATE_ORDER = ["DRY_READY", "SELECTED", "FILL_SESSION", "WATER_ADMISSION", "PRIME_FLOW_CHECK", "ACTIVE_POWER", "DERATED", "RAMP_DOWN", "PURGE_COOLDOWN", "SPENT"];
+      const STATE_META = Object.freeze({
+        DRY_READY: { label: "Dry ready", short: "DRY_READY", color: "#38bdf8", hint: "sealed passive storage", reason: "Three integrated cartridges are dry. The selected cartridge has not admitted water." },
+        SELECTED: { label: "Selected", short: "SELECTED", color: "#22d3ee", hint: "one cartridge locked", reason: "The cartridge manager isolates the two unused cartridges and verifies the external interfaces." },
+        FILL_SESSION: { label: "Fill session", short: "FILL_SESSION", color: "#0ea5e9", hint: "valve closed · batches", reason: "[1.1] Water collects in chamber 220 in batches; the valve to the cartridge stays closed until 1.8 L is measured and activation is confirmed. Cancelling here keeps the cartridge dry." },
+        WATER_ADMISSION: { label: "Water admission", short: "WATER VERIFIED", color: "#60a5fa", hint: "1.8 L target", reason: "Measured clean water is routed only to the selected cartridge and dissolves its 404 g dry KOH charge." },
+        PRIME_FLOW_CHECK: { label: "Prime / flow check", short: "PRIME + AIR OK", color: "#818cf8", hint: "≤60 s target", reason: "The internal wet loop primes while airflow, gas path, pressure, voltage and thermal readiness are verified." },
+        ACTIVE_POWER: { label: "Active power", short: "10 kW ACTIVE", color: "#4ade80", hint: "12 kW thermal Boost", reason: "One integrated cartridge feeds the 96 V DC link; the isolated converter delivers regulated CCS2 DC power." },
+        DERATED: { label: "Derated", short: "POWER LIMITED", color: "#f59e0b", hint: "recoverable protection", reason: "Power is limited when thermal, flow, voltage, current or vent margin narrows; recovery may return to active power." },
+        RAMP_DOWN: { label: "Ramp down", short: "CONTROLLED REDUCTION", color: "#fb923c", hint: "end-of-event isolation", reason: "The EV power reference is reduced under current control before opening the source and output contactors." },
+        PURGE_COOLDOWN: { label: "Purge / cooldown", short: "ISOLATE + VENT", color: "#c084fc", hint: "gas clearing + cooling", reason: "Electrical output is isolated while the dedicated gas path remains open and the cartridge cools." },
+        SPENT: { label: "Spent", short: "PRODUCTS RETAINED", color: "#94a3b8", hint: "sealed service unit", reason: "Wet liquids and solids remain inside the spent cartridge; it cannot return to DRY_READY." },
+        FAULT_LOCKED: { label: "Fault locked", short: "FAULT_LOCKED", color: "#ef4444", hint: "service intervention", reason: "A critical wet-state fault completed power isolation and purge; the system remains locked for service." }
+      });
+
+      const app = {
+        phase: "DRY_READY",
+        selected: 0,
+        active: null,
+        running: false,
+        auto: false,
+        fault: null,
+        faultTerminal: false,
+        phaseElapsedS: 0,
+        missionElapsedS: 0,
+        lastFrameMs: performance.now(),
+        lastRenderMs: 0,
+        lastSampleS: -30,
+        params: { powerKW: 10.0, waterL: 1.8, speed: 120 },
+        fill: { measuredL: 0, lastPourS: 0 },
+        protocol: null,
+        imdWarned: false,
+        metrics: freshMetrics(),
+        cartridges: [0, 1, 2].map(index => ({ index, state: "DRY_READY", energyKWh: 0, productKg: 0, waterL: 0 })),
+        samples: [],
+        log: []
+      };
+
+      const el = id => document.getElementById(id);
+      const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+      const approach = (value, target, rate) => value + (target - value) * clamp(rate, 0, 1);
+      const formatClock = seconds => {
+        const safe = Math.max(0, Math.floor(seconds));
+        return `${String(Math.floor(safe / 60)).padStart(2, "0")}:${String(safe % 60).padStart(2, "0")}`;
+      };
+
+      function freshMetrics() {
+        return {
+          powerKW: 0,
+          stackPowerKW: 0,
+          stackVoltageV: 0,
+          stackCurrentA: 0,
+          energyKWh: 0,
+          tempC: 25,
+          h2RateLMin: 0,
+          cumulativeH2L: 0,
+          alRemainingKg: CONFIG.activeAlKg,
+          productKg: 0,
+          aluminateKg: 0,
+          electrolyteM: 0,
+          waterAdmittedL: 0,
+          sumpFillPct: 0
+        };
+      }
+
+      const threeTwin = {
+        ready: false,
+        scene: null,
+        camera: null,
+        renderer: null,
+        root: null,
+        resize: () => {},
+        orbit: { yaw: 0.22, pitch: 0.24, distance: 13.2, dragging: false, x: 0, y: 0 },
+        model: {}
+      };
+
+      const systemTwin = {
+        ready: false,
+        scene: null,
+        camera: null,
+        renderer: null,
+        root: null,
+        resize: () => {},
+        routedIndex: -1,
+        orbit: { yaw: 0.55, pitch: 0.30, distance: 14.8, dragging: false, x: 0, y: 0 },
+        model: {}
+      };
+
+      function makeBoxWithEdges(width, height, depth, material, edgeColor = 0x42677a, edgeOpacity = 0.72) {
+        const group = new THREE.Group();
+        const geometry = new THREE.BoxGeometry(width, height, depth);
+        const mesh = new THREE.Mesh(geometry, material);
+        group.add(mesh);
+        const edges = new THREE.LineSegments(
+          new THREE.EdgesGeometry(geometry),
+          new THREE.LineBasicMaterial({ color: edgeColor, transparent: true, opacity: edgeOpacity })
+        );
+        group.add(edges);
+        group.userData.mesh = mesh;
+        group.userData.edges = edges;
+        return group;
+      }
+
+      function pointOnPolyline(points, progress) {
+        if (points.length < 2) return points[0] || new THREE.Vector3();
+        const lengths = [];
+        let total = 0;
+        for (let index = 0; index < points.length - 1; index += 1) {
+          const length = points[index].distanceTo(points[index + 1]);
+          lengths.push(length);
+          total += length;
+        }
+        let target = ((progress % 1) + 1) % 1 * total;
+        for (let index = 0; index < lengths.length; index += 1) {
+          if (target <= lengths[index]) return points[index].clone().lerp(points[index + 1], target / Math.max(lengths[index], 0.001));
+          target -= lengths[index];
+        }
+        return points[points.length - 1].clone();
+      }
+
+      function setSystemRoute(route, points) {
+        route.points = points;
+        route.line.geometry.dispose();
+        route.line.geometry = new THREE.BufferGeometry().setFromPoints(points);
+      }
+
+      function initSystemTwin() {
+        const container = el("systemThreeStage");
+        const fallback = el("systemThreeFallback");
+        if (!container || !window.THREE) {
+          fallback.classList.add("visible");
+          return;
+        }
+
+        try {
+          const scene = new THREE.Scene();
+          scene.fog = new THREE.FogExp2(0x050d14, 0.036);
+          const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 120);
+          const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true, powerPreference: "high-performance" });
+          renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+          renderer.outputEncoding = THREE.sRGBEncoding;
+          renderer.setClearColor(0x000000, 0);
+          container.appendChild(renderer.domElement);
+
+          scene.add(new THREE.HemisphereLight(0xbbe7ff, 0x0d1b24, 1.05));
+          const key = new THREE.DirectionalLight(0xffffff, 1.2);
+          key.position.set(8, 10, 7);
+          scene.add(key);
+          const cyan = new THREE.PointLight(0x38bdf8, 0.58, 20);
+          cyan.position.set(-5, 2, 4);
+          scene.add(cyan);
+          const amber = new THREE.PointLight(0xfacc15, 0.38, 18);
+          amber.position.set(4, 1, 3);
+          scene.add(amber);
+
+          const grid = new THREE.GridHelper(24, 30, 0x27495b, 0x142a36);
+          grid.position.y = -3.15;
+          scene.add(grid);
+
+          const root = new THREE.Group();
+          root.rotation.x = -0.03;
+          scene.add(root);
+
+          const enclosureMaterial = new THREE.MeshPhysicalMaterial({ color: 0x183c4f, transparent: true, opacity: 0.12, roughness: 0.26, metalness: 0.18, side: THREE.DoubleSide, depthWrite: false });
+          const enclosure = makeBoxWithEdges(7.2, 5.2, 4.8, enclosureMaterial, 0x6f9aad, 0.82);
+          root.add(enclosure);
+
+          const baseMaterial = new THREE.MeshStandardMaterial({ color: 0x152530, roughness: 0.62, metalness: 0.52 });
+          const base = new THREE.Mesh(new THREE.BoxGeometry(7.45, 0.22, 5.0), baseMaterial);
+          base.position.y = -2.68;
+          root.add(base);
+
+          const cartridgeGroups = [];
+          const cartridgeMaterials = [];
+          const cartridgeX = [-2.15, 0, 2.15];
+          cartridgeX.forEach((x, index) => {
+            const material = new THREE.MeshPhysicalMaterial({ color: 0x19485d, transparent: true, opacity: 0.46, roughness: 0.34, metalness: 0.28, emissive: 0x06141d, emissiveIntensity: 0.2 });
+            const group = makeBoxWithEdges(1.8, 3.0, 1.6, material, 0x76b5cf, 0.9);
+            group.position.set(x, -0.65, 0.48);
+            for (let plateIndex = 0; plateIndex < 7; plateIndex += 1) {
+              const plate = new THREE.Mesh(
+                new THREE.BoxGeometry(0.08, 2.28, 1.18),
+                new THREE.MeshStandardMaterial({ color: plateIndex % 2 ? 0xc4d0d5 : 0x376f5b, metalness: plateIndex % 2 ? 0.78 : 0.16, roughness: 0.42, transparent: true, opacity: 0.78 })
+              );
+              plate.position.set((plateIndex - 3) * 0.19, 0.14, 0);
+              group.add(plate);
+            }
+            const sump = new THREE.Mesh(new THREE.BoxGeometry(1.48, 0.42, 1.28), new THREE.MeshStandardMaterial({ color: 0x8c4d70, transparent: true, opacity: 0.5 }));
+            sump.position.y = -1.18;
+            group.add(sump);
+            const dryCharge = new THREE.Mesh(new THREE.BoxGeometry(1.30, 0.22, 1.18), new THREE.MeshStandardMaterial({ color: 0xc89b2a, emissive: 0x5e4609, emissiveIntensity: 0.28 }));
+            dryCharge.position.y = 1.18;
+            group.add(dryCharge);
+            group.userData.index = index;
+            root.add(group);
+            cartridgeGroups.push(group);
+            cartridgeMaterials.push(material);
+          });
+
+          const moduleSpecs = [
+            { x: -2.75, color: 0x38bdf8, w: 0.82 },
+            { x: -1.55, color: 0x4ade80, w: 0.95 },
+            { x: -0.25, color: 0xfacc15, w: 0.92 },
+            { x: 1.10, color: 0xfb923c, w: 1.10 },
+            { x: 2.65, color: 0xfb7185, w: 0.92 }
+          ];
+          const bopModules = moduleSpecs.map(spec => {
+            const material = new THREE.MeshStandardMaterial({ color: spec.color, transparent: true, opacity: 0.72, roughness: 0.36, metalness: 0.36, emissive: spec.color, emissiveIntensity: 0.12 });
+            const module = makeBoxWithEdges(spec.w, 0.72, 1.15, material, spec.color, 0.95);
+            module.position.set(spec.x, 1.78, -1.18);
+            root.add(module);
+            return module;
+          });
+
+          const heatPlate = new THREE.Mesh(new THREE.BoxGeometry(6.3, 0.16, 1.05), new THREE.MeshStandardMaterial({ color: 0x8f9ba3, metalness: 0.82, roughness: 0.25 }));
+          heatPlate.position.set(0, 1.12, -1.16);
+          root.add(heatPlate);
+
+          const wheelMaterial = new THREE.MeshStandardMaterial({ color: 0x111820, roughness: 0.86 });
+          [[-2.65, -2.95], [2.65, -2.95]].forEach(([x, y]) => {
+            [-1.65, 1.65].forEach(z => {
+              const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.24, 18), wheelMaterial);
+              wheel.rotation.z = Math.PI / 2;
+              wheel.position.set(x, y, z);
+              root.add(wheel);
+            });
+          });
+
+          const handleMaterial = new THREE.MeshStandardMaterial({ color: 0x61717b, metalness: 0.75, roughness: 0.28 });
+          [-1.75, 1.75].forEach(x => {
+            const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 3.9, 14), handleMaterial);
+            rail.position.set(x, 4.45, -1.9);
+            root.add(rail);
+          });
+          const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 3.5, 14), handleMaterial);
+          grip.rotation.z = Math.PI / 2;
+          grip.position.set(0, 6.35, -1.9);
+          root.add(grip);
+
+          const evPort = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.48, 22), new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0x7c6200, emissiveIntensity: 0.38, metalness: 0.62 }));
+          evPort.rotation.z = Math.PI / 2;
+          evPort.position.set(3.84, 0.15, 0.3);
+          root.add(evPort);
+          const ventPort = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.58, 20), new THREE.MeshStandardMaterial({ color: 0x4ade80, emissive: 0x155d35, emissiveIntensity: 0.35, metalness: 0.45 }));
+          ventPort.rotation.z = Math.PI / 2;
+          ventPort.position.set(3.9, 1.42, 0.35);
+          root.add(ventPort);
+
+          const makeRoute = (color, count = 12) => {
+            const material = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.16 });
+            const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(1, 0, 0)]), material);
+            root.add(line);
+            const particles = makeParticleGroup(count, color, 0.065);
+            particles.children.forEach((particle, index) => { particle.userData.offset = index / count; });
+            root.add(particles);
+            return { line, particles, points: [], speed: 0.17 + Math.random() * 0.08, active: false };
+          };
+          const routes = {
+            water: makeRoute(0x38bdf8, 13),
+            airIn: makeRoute(0x4ade80, 14),
+            gasOut: makeRoute(0x4ade80, 14),
+            electric: makeRoute(0xfacc15, 18),
+            control: makeRoute(0xfb7185, 12)
+          };
+
+          const updateCamera = () => {
+            const orbit = systemTwin.orbit;
+            const horizontal = orbit.distance * Math.cos(orbit.pitch);
+            camera.position.set(horizontal * Math.sin(orbit.yaw), orbit.distance * Math.sin(orbit.pitch), horizontal * Math.cos(orbit.yaw));
+            camera.lookAt(0, 0.25, 0);
+          };
+          const canvas = renderer.domElement;
+          canvas.addEventListener("pointerdown", event => {
+            systemTwin.orbit.dragging = true;
+            systemTwin.orbit.x = event.clientX;
+            systemTwin.orbit.y = event.clientY;
+            canvas.setPointerCapture(event.pointerId);
+          });
+          canvas.addEventListener("pointermove", event => {
+            if (!systemTwin.orbit.dragging) return;
+            const dx = event.clientX - systemTwin.orbit.x;
+            const dy = event.clientY - systemTwin.orbit.y;
+            systemTwin.orbit.x = event.clientX;
+            systemTwin.orbit.y = event.clientY;
+            systemTwin.orbit.yaw -= dx * 0.007;
+            systemTwin.orbit.pitch = clamp(systemTwin.orbit.pitch + dy * 0.006, -0.45, 0.85);
+            updateCamera();
+          });
+          const stopDrag = () => { systemTwin.orbit.dragging = false; };
+          canvas.addEventListener("pointerup", stopDrag);
+          canvas.addEventListener("pointercancel", stopDrag);
+          canvas.addEventListener("wheel", event => {
+            event.preventDefault();
+            systemTwin.orbit.distance = clamp(systemTwin.orbit.distance + event.deltaY * 0.012, 10, 24);
+            updateCamera();
+          }, { passive: false });
+
+          const resize = () => {
+            const bounds = container.getBoundingClientRect();
+            if (bounds.width < 20 || bounds.height < 20) return;
+            renderer.setSize(bounds.width, bounds.height, false);
+            camera.aspect = bounds.width / bounds.height;
+            camera.updateProjectionMatrix();
+          };
+          if (window.ResizeObserver) new ResizeObserver(resize).observe(container);
+          window.addEventListener("resize", resize);
+
+          Object.assign(systemTwin, {
+            ready: true,
+            scene,
+            camera,
+            renderer,
+            root,
+            resize,
+            model: { cartridgeGroups, cartridgeMaterials, cartridgeX, bopModules, routes }
+          });
+          updateCamera();
+          resize();
+        } catch (error) {
+          fallback.classList.add("visible");
+          console.error("System 3D twin initialization failed", error);
+        }
+      }
+
+      function routeSystemTwin(index) {
+        if (!systemTwin.ready || systemTwin.routedIndex === index) return;
+        systemTwin.routedIndex = index;
+        const x = systemTwin.model.cartridgeX[index];
+        const routes = systemTwin.model.routes;
+        setSystemRoute(routes.water, [new THREE.Vector3(-2.75, 1.78, -1.18), new THREE.Vector3(-2.75, 1.05, -0.1), new THREE.Vector3(x, 1.03, 0.48)]);
+        setSystemRoute(routes.airIn, [new THREE.Vector3(-1.55, 1.78, -1.18), new THREE.Vector3(-1.55, 0.55, -0.45), new THREE.Vector3(x, 0.45, 0.48)]);
+        setSystemRoute(routes.gasOut, [new THREE.Vector3(x, 0.78, 0.48), new THREE.Vector3(x, 1.42, 1.55), new THREE.Vector3(3.9, 1.42, 0.35)]);
+        setSystemRoute(routes.electric, [new THREE.Vector3(x, -0.25, 0.48), new THREE.Vector3(-0.25, 1.15, -0.72), new THREE.Vector3(1.10, 1.78, -1.18), new THREE.Vector3(3.84, 0.15, 0.3)]);
+        setSystemRoute(routes.control, [new THREE.Vector3(2.65, 1.78, -1.18), new THREE.Vector3(2.65, 0.92, -0.55), new THREE.Vector3(x, 0.95, 0.48)]);
+      }
+
+      function updateSystemTwin(realDtS) {
+        if (!systemTwin.ready) return;
+        const routedIndex = app.active === null ? app.selected : app.active;
+        routeSystemTwin(routedIndex);
+        const flowActive = {
+          water: app.phase === "WATER_ADMISSION" || app.phase === "PRIME_FLOW_CHECK",
+          airIn: ["PRIME_FLOW_CHECK", "ACTIVE_POWER", "DERATED", "RAMP_DOWN", "PURGE_COOLDOWN"].includes(app.phase),
+          gasOut: ["ACTIVE_POWER", "DERATED", "RAMP_DOWN", "PURGE_COOLDOWN"].includes(app.phase),
+          electric: ["ACTIVE_POWER", "DERATED", "RAMP_DOWN"].includes(app.phase),
+          control: app.phase !== "SPENT" && app.phase !== "FAULT_LOCKED"
+        };
+        Object.entries(systemTwin.model.routes).forEach(([key, route]) => {
+          route.active = Boolean(flowActive[key]);
+          route.line.material.opacity = route.active ? 0.9 : 0.12;
+          route.particles.visible = route.active;
+          route.particles.children.forEach(particle => {
+            particle.userData.offset = (particle.userData.offset + realDtS * route.speed) % 1;
+            particle.position.copy(pointOnPolyline(route.points, particle.userData.offset));
+          });
+        });
+
+        systemTwin.model.cartridgeGroups.forEach((group, index) => {
+          const cart = app.cartridges[index];
+          const material = systemTwin.model.cartridgeMaterials[index];
+          const active = app.active === index && cart.state !== "SPENT";
+          const selected = app.active === null && app.selected === index;
+          material.color.set(cart.state === "SPENT" ? 0x5b3b4b : active ? 0x1d754f : selected ? 0x16617f : 0x19485d);
+          material.emissive.set(active ? 0x0c4b2d : selected ? 0x07334b : 0x06141d);
+          material.emissiveIntensity = active ? 0.72 : selected ? 0.46 : 0.18;
+          group.userData.edges.material.color.set(cart.state === "SPENT" ? 0xb57999 : active ? 0x4ade80 : selected ? 0x38bdf8 : 0x76b5cf);
+        });
+        if (!systemTwin.orbit.dragging) systemTwin.root.rotation.y += realDtS * 0.018;
+        systemTwin.renderer.render(systemTwin.scene, systemTwin.camera);
+      }
+
+      function makeParticleGroup(count, color, radius) {
+        const group = new THREE.Group();
+        const geometry = new THREE.SphereGeometry(radius, 10, 10);
+        const material = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.9 });
+        for (let index = 0; index < count; index += 1) {
+          const particle = new THREE.Mesh(geometry, material);
+          particle.userData.phase = Math.random() * Math.PI * 2;
+          particle.userData.speed = 0.65 + Math.random() * 0.75;
+          group.add(particle);
+        }
+        return group;
+      }
+
+      function initThreeTwin() {
+        const container = el("threeStage");
+        const fallback = el("threeFallback");
+        if (!container || !window.THREE) {
+          fallback.classList.add("visible");
+          return;
+        }
+
+        try {
+          const scene = new THREE.Scene();
+          scene.fog = new THREE.FogExp2(0x061018, 0.045);
+          const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+          const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true, powerPreference: "high-performance" });
+          renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+          renderer.outputEncoding = THREE.sRGBEncoding;
+          renderer.setClearColor(0x000000, 0);
+          container.appendChild(renderer.domElement);
+
+          const ambient = new THREE.HemisphereLight(0xa8dcff, 0x10202b, 1.05);
+          scene.add(ambient);
+          const key = new THREE.DirectionalLight(0xffffff, 1.15);
+          key.position.set(7, 9, 8);
+          scene.add(key);
+          const cyanLight = new THREE.PointLight(0x38bdf8, 0.75, 22);
+          cyanLight.position.set(-5, 2, 5);
+          scene.add(cyanLight);
+          const violetLight = new THREE.PointLight(0xc084fc, 0.45, 18);
+          violetLight.position.set(5, -1, 4);
+          scene.add(violetLight);
+
+          const grid = new THREE.GridHelper(22, 28, 0x264355, 0x172b37);
+          grid.position.y = -3.12;
+          scene.add(grid);
+
+          const root = new THREE.Group();
+          root.rotation.x = -0.04;
+          scene.add(root);
+
+          const casingMaterial = new THREE.MeshPhysicalMaterial({
+            color: 0x1c4d64,
+            transparent: true,
+            opacity: 0.17,
+            roughness: 0.28,
+            metalness: 0.12,
+            side: THREE.DoubleSide,
+            depthWrite: false
+          });
+          const casingGeometry = new THREE.BoxGeometry(7.2, 5.7, 4.8);
+          const casing = new THREE.Mesh(casingGeometry, casingMaterial);
+          root.add(casing);
+          const casingEdges = new THREE.LineSegments(
+            new THREE.EdgesGeometry(casingGeometry),
+            new THREE.LineBasicMaterial({ color: 0x4a7a91, transparent: true, opacity: 0.72 })
+          );
+          root.add(casingEdges);
+
+          const wetMaterial = new THREE.MeshPhysicalMaterial({ color: 0x167fb0, transparent: true, opacity: 0.055, depthWrite: false, side: THREE.DoubleSide });
+          const wetVolume = new THREE.Mesh(new THREE.BoxGeometry(5.7, 4.15, 3.65), wetMaterial);
+          wetVolume.position.y = -0.15;
+          root.add(wetVolume);
+
+          const cathodeMaterial = new THREE.MeshStandardMaterial({ color: 0x597b73, roughness: 0.58, metalness: 0.34, emissive: 0x0a2c20, emissiveIntensity: 0.16, transparent: true, opacity: 0.68, depthWrite: false });
+          const cathodes = new THREE.Group();
+          [-2.35, 2.35].forEach(x => {
+            const cathode = new THREE.Mesh(new THREE.BoxGeometry(0.28, 3.65, 3.45), cathodeMaterial);
+            cathode.position.set(x, -0.12, 0);
+            cathodes.add(cathode);
+            const faceGrid = new THREE.GridHelper(3.1, 11, 0x73e2ad, 0x2c7658);
+            faceGrid.rotation.z = Math.PI / 2;
+            faceGrid.rotation.y = Math.PI / 2;
+            faceGrid.position.set(x + (x < 0 ? -0.15 : 0.15), -0.12, 0);
+            cathodes.add(faceGrid);
+          });
+          root.add(cathodes);
+
+          const separatorMaterial = new THREE.MeshPhysicalMaterial({ color: 0xd8e8ee, transparent: true, opacity: 0.42, roughness: 0.88, depthWrite: false });
+          [-1.82, 1.82].forEach(x => {
+            const separator = new THREE.Mesh(new THREE.BoxGeometry(0.10, 3.7, 3.42), separatorMaterial);
+            separator.position.set(x, -0.12, 0);
+            root.add(separator);
+          });
+
+          const anodeMaterial = new THREE.MeshStandardMaterial({ color: 0xc5d1d7, roughness: 0.25, metalness: 0.88, emissive: 0x172127, emissiveIntensity: 0.15 });
+          const anodeGroup = new THREE.Group();
+          for (let index = 0; index < 9; index += 1) {
+            const panel = new THREE.Mesh(new THREE.BoxGeometry(0.18, 3.55, 1.22), anodeMaterial);
+            panel.position.set((index - 4) * 0.39, -0.12, index % 2 ? 0.34 : -0.34);
+            panel.rotation.y = index % 2 ? 0.69 : -0.69;
+            anodeGroup.add(panel);
+          }
+          root.add(anodeGroup);
+
+          const headerMaterial = new THREE.MeshStandardMaterial({ color: 0x248ab7, metalness: 0.5, roughness: 0.3 });
+          const header = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 5.7, 20), headerMaterial);
+          header.rotation.z = Math.PI / 2;
+          header.position.y = 2.17;
+          root.add(header);
+
+          const sachetMaterial = new THREE.MeshStandardMaterial({ color: 0x8d6c17, emissive: 0x3b2c07, emissiveIntensity: 0.2, roughness: 0.78 });
+          const sachets = new THREE.Group();
+          [-1.8, -0.6, 0.6, 1.8].forEach(x => {
+            const sachet = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.42, 1.15), sachetMaterial);
+            sachet.position.set(x, 1.72, 0);
+            sachets.add(sachet);
+          });
+          root.add(sachets);
+
+          const busbarMaterial = new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0x6e5500, emissiveIntensity: 0.55, metalness: 0.72, roughness: 0.24 });
+          const busbar = new THREE.Mesh(new THREE.BoxGeometry(5.6, 0.12, 0.16), busbarMaterial);
+          busbar.position.set(0, 2.62, -1.52);
+          root.add(busbar);
+
+          const coldWallMaterial = new THREE.MeshStandardMaterial({ color: 0xb5703c, metalness: 0.82, roughness: 0.3, emissive: 0x4c210d, emissiveIntensity: 0.18 });
+          const coldWall = new THREE.Mesh(new THREE.BoxGeometry(5.55, 3.85, 0.16), coldWallMaterial);
+          coldWall.position.set(0, -0.12, -1.86);
+          root.add(coldWall);
+          for (let finIndex = 0; finIndex < 9; finIndex += 1) {
+            const fin = new THREE.Mesh(new THREE.BoxGeometry(0.12, 3.45, 0.34), coldWallMaterial);
+            fin.position.set(-2.35 + finIndex * 0.59, -0.12, -2.05);
+            root.add(fin);
+          }
+
+          const pump = new THREE.Mesh(new THREE.TorusGeometry(0.38, 0.10, 12, 28), new THREE.MeshStandardMaterial({ color: 0x2d9bc5, metalness: 0.45, roughness: 0.32, emissive: 0x0d4158, emissiveIntensity: 0.32 }));
+          pump.rotation.y = Math.PI / 2;
+          pump.position.set(-2.65, -1.65, 1.42);
+          root.add(pump);
+          const returnHeader = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.10, 4.9, 16), headerMaterial);
+          returnHeader.rotation.z = Math.PI / 2;
+          returnHeader.position.set(0, -1.72, 1.48);
+          root.add(returnHeader);
+
+          const demister = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.62, 1.12), new THREE.MeshStandardMaterial({ color: 0xa7bac4, transparent: true, opacity: 0.56, roughness: 0.82, wireframe: true }));
+          demister.position.set(2.55, 1.48, 0.96);
+          root.add(demister);
+
+          const sumpMaterial = new THREE.MeshPhysicalMaterial({ color: 0x362632, transparent: true, opacity: 0.68, roughness: 0.7, metalness: 0.12 });
+          const sump = new THREE.Mesh(new THREE.BoxGeometry(6.15, 0.9, 3.85), sumpMaterial);
+          sump.position.y = -2.28;
+          root.add(sump);
+          const productMaterial = new THREE.MeshStandardMaterial({ color: 0xf3a6c8, transparent: true, opacity: 0.82, roughness: 0.95 });
+          const product = new THREE.Mesh(new THREE.BoxGeometry(5.75, 0.66, 3.48), productMaterial);
+          product.position.y = -2.34;
+          product.scale.y = 0.03;
+          root.add(product);
+
+          const ventMaterial = new THREE.MeshStandardMaterial({ color: 0x9c67c9, metalness: 0.45, roughness: 0.34 });
+          const vent = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 2.7, 18), ventMaterial);
+          vent.rotation.z = Math.PI / 2;
+          vent.position.set(4.12, 1.55, 1.12);
+          root.add(vent);
+
+          const electrolyte = new THREE.Mesh(
+            new THREE.BoxGeometry(4.1, 3.28, 3.15),
+            new THREE.MeshPhysicalMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.02, depthWrite: false, side: THREE.DoubleSide })
+          );
+          electrolyte.position.y = -0.22;
+          root.add(electrolyte);
+
+          const waterParticles = makeParticleGroup(28, 0x38bdf8, 0.065);
+          waterParticles.children.forEach((particle, index) => particle.position.set(-2.5 + (index % 8) * 0.7, 1.85 + (index % 3) * 0.22, -1.25 + (index % 5) * 0.55));
+          root.add(waterParticles);
+
+          const ionParticles = makeParticleGroup(42, 0x38bdf8, 0.052);
+          ionParticles.children.forEach((particle, index) => particle.position.set(-1.5 + (index % 8) * 0.42, -1.4 + (index % 7) * 0.45, -1.2 + (index % 6) * 0.46));
+          root.add(ionParticles);
+
+          const aluminateParticles = makeParticleGroup(26, 0xa78bfa, 0.075);
+          aluminateParticles.children.forEach((particle, index) => particle.position.set(-1.3 + (index % 7) * 0.43, -1.3 + (index % 6) * 0.48, -1.0 + (index % 5) * 0.5));
+          root.add(aluminateParticles);
+
+          const electronParticles = makeParticleGroup(18, 0xfacc15, 0.06);
+          electronParticles.children.forEach((particle, index) => particle.position.set(-2.6 + index * 0.31, 2.62, -1.52));
+          root.add(electronParticles);
+
+          const gasParticles = makeParticleGroup(28, 0xc084fc, 0.075);
+          gasParticles.children.forEach((particle, index) => particle.position.set(1.55 + (index % 6) * 0.4, -0.8 + (index % 7) * 0.38, 0.55 + (index % 5) * 0.34));
+          root.add(gasParticles);
+
+          const updateCamera = () => {
+            const orbit = threeTwin.orbit;
+            const horizontal = orbit.distance * Math.cos(orbit.pitch);
+            camera.position.set(horizontal * Math.sin(orbit.yaw), orbit.distance * Math.sin(orbit.pitch), horizontal * Math.cos(orbit.yaw));
+            camera.lookAt(0, -0.15, 0);
+          };
+
+          const canvas = renderer.domElement;
+          canvas.addEventListener("pointerdown", event => {
+            threeTwin.orbit.dragging = true;
+            threeTwin.orbit.x = event.clientX;
+            threeTwin.orbit.y = event.clientY;
+            canvas.setPointerCapture(event.pointerId);
+          });
+          canvas.addEventListener("pointermove", event => {
+            if (!threeTwin.orbit.dragging) return;
+            const dx = event.clientX - threeTwin.orbit.x;
+            const dy = event.clientY - threeTwin.orbit.y;
+            threeTwin.orbit.x = event.clientX;
+            threeTwin.orbit.y = event.clientY;
+            threeTwin.orbit.yaw -= dx * 0.007;
+            threeTwin.orbit.pitch = clamp(threeTwin.orbit.pitch + dy * 0.006, -0.55, 0.85);
+            updateCamera();
+          });
+          const stopDrag = () => { threeTwin.orbit.dragging = false; };
+          canvas.addEventListener("pointerup", stopDrag);
+          canvas.addEventListener("pointercancel", stopDrag);
+          canvas.addEventListener("wheel", event => {
+            event.preventDefault();
+            threeTwin.orbit.distance = clamp(threeTwin.orbit.distance + event.deltaY * 0.012, 8.5, 20);
+            updateCamera();
+          }, { passive: false });
+
+          const resize = () => {
+            const bounds = container.getBoundingClientRect();
+            if (bounds.width < 20 || bounds.height < 20) return;
+            renderer.setSize(bounds.width, bounds.height, false);
+            camera.aspect = bounds.width / bounds.height;
+            camera.updateProjectionMatrix();
+          };
+          if (window.ResizeObserver) new ResizeObserver(resize).observe(container);
+          window.addEventListener("resize", resize);
+
+          Object.assign(threeTwin, {
+            ready: true,
+            scene,
+            camera,
+            renderer,
+            root,
+            resize,
+            model: {
+              anodeGroup,
+              anodeMaterial,
+              cathodeMaterial,
+              electrolyte,
+              product,
+              waterParticles,
+              ionParticles,
+              aluminateParticles,
+              electronParticles,
+              gasParticles,
+              coolColor: new THREE.Color(0xc5d1d7),
+              hotColor: new THREE.Color(0xff7b45)
+            }
+          });
+          updateCamera();
+          resize();
+        } catch (error) {
+          fallback.classList.add("visible");
+          console.error("3D twin initialization failed", error);
+        }
+      }
+
+      function updateThreeTwin(realDtS) {
+        if (!threeTwin.ready) return;
+        const model = threeTwin.model;
+        const m = app.metrics;
+        const active = ["ACTIVE_POWER", "DERATED", "RAMP_DOWN"].includes(app.phase);
+        const wet = !["DRY_READY", "SELECTED"].includes(app.phase);
+        const gasActive = active || app.phase === "PURGE_COOLDOWN";
+
+        model.waterParticles.visible = app.phase === "WATER_ADMISSION";
+        model.ionParticles.visible = wet && !["SPENT", "FAULT_LOCKED"].includes(app.phase);
+        model.aluminateParticles.visible = active || app.phase === "PURGE_COOLDOWN";
+        model.electronParticles.visible = active;
+        model.gasParticles.visible = gasActive;
+        model.electrolyte.material.opacity = wet ? 0.055 + 0.075 * clamp(m.waterAdmittedL / 1.8, 0, 1) : 0.012;
+        model.cathodeMaterial.emissiveIntensity = active ? 0.62 : 0.16;
+
+        const remaining = clamp(m.alRemainingKg / CONFIG.activeAlKg, 0, 1);
+        model.anodeGroup.children.forEach(panel => { panel.scale.x = 0.22 + remaining * 0.78; });
+        const heat = clamp((m.tempC - 35) / 30, 0, 1);
+        model.anodeMaterial.color.copy(model.coolColor).lerp(model.hotColor, heat);
+        model.anodeMaterial.emissiveIntensity = 0.15 + heat * 0.42;
+        model.product.scale.y = Math.max(0.03, clamp(m.productKg / CONFIG.productEquivalentKg, 0, 1));
+        model.product.position.y = -2.56 + 0.22 * model.product.scale.y;
+
+        model.waterParticles.children.forEach((particle, index) => {
+          particle.position.y -= realDtS * (0.8 + particle.userData.speed);
+          if (particle.position.y < 0.8) particle.position.y = 2.2 + (index % 3) * 0.12;
+        });
+        model.ionParticles.children.forEach((particle, index) => {
+          particle.position.x += Math.sin(performance.now() * 0.0015 + particle.userData.phase) * realDtS * 0.32;
+          particle.position.y += Math.cos(performance.now() * 0.0012 + index) * realDtS * 0.16;
+          if (Math.abs(particle.position.x) > 1.7) particle.position.x *= -0.88;
+        });
+        model.aluminateParticles.children.forEach((particle, index) => {
+          particle.position.y -= realDtS * (0.18 + particle.userData.speed * 0.13);
+          particle.position.x += Math.sin(performance.now() * 0.001 + index) * realDtS * 0.12;
+          if (particle.position.y < -1.65) particle.position.y = 1.25 + (index % 5) * 0.16;
+        });
+        model.electronParticles.children.forEach((particle, index) => {
+          particle.position.x += realDtS * (1.1 + particle.userData.speed);
+          if (particle.position.x > 2.75) particle.position.x = -2.75 + (index % 3) * 0.08;
+        });
+        model.gasParticles.children.forEach((particle, index) => {
+          particle.position.y += realDtS * (0.34 + particle.userData.speed * 0.42);
+          particle.position.x += realDtS * 0.24;
+          if (particle.position.y > 2.0 || particle.position.x > 5.35) {
+            particle.position.set(1.45 + (index % 5) * 0.34, -1.0 + (index % 3) * 0.18, 0.48 + (index % 5) * 0.34);
+          }
+        });
+
+        if (!threeTwin.orbit.dragging) threeTwin.root.rotation.y += realDtS * 0.035;
+        threeTwin.renderer.render(threeTwin.scene, threeTwin.camera);
+      }
+
+      function getActive3dExportTarget() {
+        const activeTab = document.querySelector(".view-tab.active");
+        if (!activeTab) return null;
+        if (activeTab.dataset.view === "system3d" && systemTwin.ready) {
+          return { twin: systemTwin, filename: "MPRO_v8_system_3D.png" };
+        }
+        if (activeTab.dataset.view === "twin3d" && threeTwin.ready) {
+          return { twin: threeTwin, filename: "MPRO_v8_cartridge_3D.png" };
+        }
+        return null;
+      }
+
+      function updateExport3dButton() {
+        const button = el("export3dBtn");
+        const target = getActive3dExportTarget();
+        button.disabled = !target;
+        button.title = target ? `Download ${target.filename}` : "Open a 3D view to enable PNG export";
+      }
+
+      function exportActive3dPng() {
+        const target = getActive3dExportTarget();
+        if (!target) return;
+
+        try {
+          target.twin.resize();
+          target.twin.renderer.render(target.twin.scene, target.twin.camera);
+          const source = target.twin.renderer.domElement;
+          const output = document.createElement("canvas");
+          output.width = source.width;
+          output.height = source.height;
+          const context = output.getContext("2d");
+          if (!context) throw new Error("2D export canvas unavailable");
+
+          const background = context.createLinearGradient(0, 0, 0, output.height);
+          background.addColorStop(0, "#081721");
+          background.addColorStop(1, "#050d14");
+          context.fillStyle = background;
+          context.fillRect(0, 0, output.width, output.height);
+          const glow = context.createRadialGradient(output.width * 0.5, output.height * 0.42, 0, output.width * 0.5, output.height * 0.42, output.width * 0.48);
+          glow.addColorStop(0, "rgba(30, 94, 126, 0.34)");
+          glow.addColorStop(1, "rgba(5, 13, 20, 0)");
+          context.fillStyle = glow;
+          context.fillRect(0, 0, output.width, output.height);
+          context.drawImage(source, 0, 0);
+
+          const link = document.createElement("a");
+          link.download = target.filename;
+          link.href = output.toDataURL("image/png");
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+
+          const button = el("export3dBtn");
+          button.textContent = "PNG EXPORTED";
+          window.setTimeout(() => { button.textContent = "EXPORT ACTIVE 3D PNG"; }, 1400);
+          addLog(`${target.filename} exported for Word / Script Lab insertion.`);
+          render();
+        } catch (error) {
+          console.error("3D PNG export failed", error);
+          addLog("3D PNG export failed. Keep the 3D tab visible and try again.");
+          render();
+        }
+      }
+
+      function addLog(message) {
+        app.log.unshift({ time: formatClock(app.missionElapsedS), message });
+        app.log = app.log.slice(0, 8);
+      }
+
+      function setPhase(next, reason = "") {
+        if (!STATE_META[next] || next === app.phase) return;
+        app.phase = next;
+        app.phaseElapsedS = 0;
+        document.body.dataset.phase = next;
+        if (app.active !== null) app.cartridges[app.active].state = next;
+        addLog(`${STATE_META[next].label}: ${reason || STATE_META[next].reason}`);
+        render();
+      }
+
+      function evaluateGates() {
+        const v = id => el(id);
+        const env = v("envInput").value;
+        const imd = v("imdInput").value;
+        return [
+          { label: "Environment [4.1]", ok: env === "open" || env === "wall-ok", msg: env === "enclosed" ? "Enclosed space blocks operation" : env === "wall" ? "Place the diffuser on the open side and confirm" : "Open air accepted" },
+          { label: "Vent path [5.2]", ok: v("ventsClearInput").checked, msg: v("ventsClearInput").checked ? "Vent path clear" : "Clear cargo from the vents, then re-check" },
+          { label: "Deployment [2.1]", ok: v("cableInput").checked && v("ventInput").checked && v("diffuserInput").checked, msg: !v("cableInput").checked ? "Deploy the cable" : !v("ventInput").checked ? "Deploy the vent" : !v("diffuserInput").checked ? "VENT_DEPLOYED alone is not enough" : "Cable, vent and driver confirmation" },
+          { label: "Connection [8.1]", ok: v("hvilInput").checked && v("cpInput").checked && imd !== "block", warn: imd === "warning", msg: !v("hvilInput").checked ? "HVIL discontinuity in window" : !v("cpInput").checked ? "CP level out of range" : imd === "block" ? "IMD below block threshold: transfer prevented" : imd === "warning" ? "IMD warning: indication only" : "HVIL, CP and isolation verified" },
+          { label: "Handshake [8.1]", ok: true, msg: v("isoInput").checked ? "ISO 15118" : "ISO 15118 failed → DIN 70121 fallback" }
+        ];
+      }
+
+      function renderGates() {
+        const gates = evaluateGates();
+        el("gateList").innerHTML = gates.map(g => `<div class="gate ${g.ok ? (g.warn ? "warn" : "ok") : "fail"}"><b>${g.ok ? (g.warn ? "!" : "✓") : "✕"}</b><span>${g.label}<small>${g.msg}</small></span></div>`).join("");
+        const failed = gates.filter(g => !g.ok).length;
+        el("gateSummary").textContent = failed ? `${failed} GATE${failed > 1 ? "S" : ""} BLOCKING` : "ALL GATES PASSED";
+        return failed === 0;
+      }
+
+      function activateSelected() {
+        const cart = app.cartridges[app.selected];
+        if (!cart || cart.state !== "DRY_READY") return;
+        if (!renderGates()) {
+          const blocking = evaluateGates().find(g => !g.ok);
+          addLog(`Mission blocked before cartridge selection — ${blocking.label}: ${blocking.msg}.`);
+          app.auto = false;
+          render();
+          return;
+        }
+        app.protocol = el("isoInput").checked ? "ISO 15118" : "DIN 70121";
+        app.fill = { measuredL: 0, lastPourS: 0 };
+        app.imdWarned = false;
+        app.active = app.selected;
+        app.metrics = freshMetrics();
+        app.phaseElapsedS = 0;
+        app.missionElapsedS = 0;
+        app.samples = [];
+        app.lastSampleS = -30;
+        app.fault = null;
+        app.faultTerminal = false;
+        app.running = true;
+        setPhase("SELECTED", `${app.protocol} session. Cartridge ${app.active + 1} locked; the other two cartridges remain dry, hydraulically isolated and electrically isolated.`);
+      }
+
+      function advancePhase() {
+        switch (app.phase) {
+          case "DRY_READY": activateSelected(); break;
+          case "SELECTED": setPhase("FILL_SESSION", "Fill session opened: pour water; the valve to the cartridge stays closed."); app.running = true; break;
+          case "FILL_SESSION": manualFillStep(); break;
+          case "WATER_ADMISSION": setPhase("PRIME_FLOW_CHECK", "KOH dissolution accepted; internal circulation, air and gas paths are being verified."); app.running = true; break;
+          case "PRIME_FLOW_CHECK": setPhase("ACTIVE_POWER", "Prime complete; pre-charge accepted and regulated CCS2 DC transfer enabled."); app.running = true; break;
+          case "ACTIVE_POWER": setPhase("DERATED", "Recoverable derating demonstration: the approved power reference is reduced."); app.running = true; break;
+          case "DERATED":
+            if (app.fault) startPurge("Persistent vent restriction escalated to a critical wet-state fault.", true);
+            else { setPhase("RAMP_DOWN", "Controlled end-of-event power reduction started."); app.running = true; }
+            break;
+          case "RAMP_DOWN": startPurge("Source and output contactors opened after controlled current reduction.", false); break;
+          case "PURGE_COOLDOWN": finishCartridge(); break;
+          case "SPENT": prepareNextCartridge(); break;
+          case "FAULT_LOCKED": break;
+        }
+      }
+
+      const FILL_BATCH_L = 0.6;
+
+      function fillVerdict() {
+        const measured = app.fill.measuredL;
+        if (measured > 2.2 + 1e-9) return { ok: false, msg: `Overfill: ${measured.toFixed(1)} L exceeds 2.2 L — drain chamber 220.` };
+        if (measured + 1e-9 < 1.8) return { ok: false, msg: `Received ${measured.toFixed(1)} of 1.8 L. Missing ${(1.8 - measured).toFixed(1)} L.` };
+        return { ok: true, msg: `${measured.toFixed(2)} L measured.` };
+      }
+
+      function pourBatch() {
+        const poured = Math.min(FILL_BATCH_L, app.params.waterL - app.fill.measuredL);
+        if (poured <= 1e-9) return false;
+        app.fill.measuredL = Math.round((app.fill.measuredL + poured) * 100) / 100;
+        addLog(`Pour: ${fillVerdict().msg}`);
+        return true;
+      }
+
+      function admitWater() {
+        const verdict = fillVerdict();
+        if (!verdict.ok) { addLog(`Activation refused — ${verdict.msg}`); app.auto = false; render(); return; }
+        app.missionElapsedS = 0;
+        app.samples = [];
+        app.lastSampleS = -30;
+        setPhase("WATER_ADMISSION", `Activation confirmed (irreversible). ${verdict.msg} Reaction clock starts now.`);
+        app.running = true;
+      }
+
+      function manualFillStep() {
+        if (app.fill.measuredL + 1e-9 < app.params.waterL && pourBatch()) { render(); return; }
+        admitWater();
+      }
+
+      function cancelFill() {
+        if (!["SELECTED", "FILL_SESSION"].includes(app.phase) || app.active === null) return;
+        const index = app.active;
+        app.cartridges[index].state = "DRY_READY";
+        app.active = null;
+        app.selected = index;
+        app.phase = "DRY_READY";
+        app.running = false;
+        app.auto = false;
+        app.metrics = freshMetrics();
+        document.body.dataset.phase = "DRY_READY";
+        addLog(`Fill cancelled before wetting: cartridge ${index + 1} returned to DRY_READY (water drained from chamber 220).`);
+        render();
+      }
+
+      function startPurge(reason = "DC isolated; dedicated gas path remains open during cooldown.", faultTerminal = false) {
+        if (app.active === null || app.phase === "DRY_READY" || app.phase === "SPENT" || app.phase === "FAULT_LOCKED") return;
+        app.faultTerminal = faultTerminal;
+        app.fault = null;
+        setPhase("PURGE_COOLDOWN", reason);
+        app.running = true;
+      }
+
+      function finishCartridge() {
+        if (app.active === null) return;
+        const cart = app.cartridges[app.active];
+        if (!app.faultTerminal) app.metrics.energyKWh = Math.max(app.metrics.energyKWh, CONFIG.targetEnergyKWh);
+        const chemicalProgress = clamp(app.metrics.energyKWh / CONFIG.targetEnergyKWh, 0, 1);
+        app.metrics.alRemainingKg = CONFIG.activeAlKg * (1 - CONFIG.aluminumUtilization * chemicalProgress);
+        app.metrics.productKg = CONFIG.productEquivalentKg * CONFIG.aluminumUtilization * chemicalProgress;
+        app.metrics.sumpFillPct = CONFIG.productSumpDesignFillPct * chemicalProgress;
+        app.metrics.powerKW = 0;
+        app.metrics.h2RateLMin = 0;
+        cart.energyKWh = app.metrics.energyKWh;
+        cart.productKg = app.metrics.productKg;
+        cart.waterL = app.fill.measuredL;
+        app.running = false;
+        app.auto = false;
+        if (app.faultTerminal) {
+          setPhase("FAULT_LOCKED", `Cartridge ${app.active + 1} is wet and isolated after a critical fault; service intervention is required.`);
+        } else {
+          setPhase("SPENT", `Cartridge ${app.active + 1} sealed with liquid and solid products retained.`);
+        }
+      }
+
+      function prepareNextCartridge() {
+        const next = app.cartridges.find(cart => cart.state === "DRY_READY");
+        if (!next) {
+          addLog("All three cartridges are spent. Service replacement is required.");
+          render();
+          return;
+        }
+        app.active = null;
+        app.selected = next.index;
+        app.phase = "DRY_READY";
+        app.phaseElapsedS = 0;
+        app.missionElapsedS = 0;
+        app.metrics = freshMetrics();
+        app.samples = [];
+        app.fault = null;
+        app.faultTerminal = false;
+        document.body.dataset.phase = "DRY_READY";
+        addLog(`Cartridge ${next.index + 1} selected for the next rescue event.`);
+        render();
+      }
+
+      function injectFault() {
+        if (app.phase === "ACTIVE_POWER") {
+          app.fault = { type: "VENT_RESTRICTION", severity: "MODERATE", label: "Recoverable vent restriction" };
+          setPhase("DERATED", "Moderate vent restriction: current is limited while the dedicated vent path is kept open.");
+          app.running = true;
+        } else if (app.phase === "DERATED" && app.fault) {
+          startPurge("Critical vent-path escalation: power isolated before purge and fault lock.", true);
+        }
+      }
+
+      function clearFault() {
+        if (app.phase !== "DERATED" || !app.fault) return;
+        app.fault = null;
+        setPhase("ACTIVE_POWER", "Vent path restored and verified; approved power control resumed.");
+        app.running = true;
+      }
+
+      function resetDemo() {
+        app.phase = "DRY_READY";
+        app.selected = 0;
+        app.active = null;
+        app.running = false;
+        app.auto = false;
+        app.fault = null;
+        app.faultTerminal = false;
+        app.phaseElapsedS = 0;
+        app.missionElapsedS = 0;
+        app.metrics = freshMetrics();
+        app.cartridges = [0, 1, 2].map(index => ({ index, state: "DRY_READY", energyKWh: 0, productKg: 0, waterL: 0 }));
+        app.samples = [];
+        app.log = [];
+        app.lastSampleS = -30;
+        document.body.dataset.phase = "DRY_READY";
+        addLog("Demo reset. Three dry cartridges are ready.");
+        render();
+      }
+
+      function superviseIsolation() {
+        const imd = el("imdInput").value;
+        if (imd === "block") {
+          startPurge("[8.1] IMD below block threshold during transfer: the independent supervisor isolated power.", true);
+        } else if (imd === "warning" && !app.imdWarned) {
+          app.imdWarned = true;
+          addLog("[8.1] IMD warning threshold: indication only; transfer continues while every other condition is safe.");
+        }
+      }
+
+      function updateSimulation(simDtS) {
+        if (!app.running || ["DRY_READY", "SPENT", "FAULT_LOCKED"].includes(app.phase)) return;
+
+        app.phaseElapsedS += simDtS;
+        app.missionElapsedS += simDtS;
+        const m = app.metrics;
+        const requestedPower = app.params.powerKW;
+
+        if (app.phase === "SELECTED") {
+          m.tempC = approach(m.tempC, 26, simDtS / 30);
+          if (app.auto && app.phaseElapsedS >= CONFIG.selectionDurationS) {
+            setPhase("FILL_SESSION", "Gates accepted; fill session opened with the cartridge valve closed.");
+          }
+        }
+
+        if (app.phase === "FILL_SESSION") {
+          m.tempC = approach(m.tempC, 25, simDtS / 60);
+          if (app.auto && app.phaseElapsedS - app.fill.lastPourS >= 8) {
+            app.fill.lastPourS = app.phaseElapsedS;
+            if (!pourBatch()) admitWater();
+          }
+        }
+
+        if (app.phase === "WATER_ADMISSION") {
+          const admission = clamp(app.phaseElapsedS / CONFIG.waterAdmissionDurationS, 0, 1);
+          m.waterAdmittedL = app.fill.measuredL * admission;
+          m.electrolyteM = CONFIG.targetElectrolyteM * admission;
+          m.tempC = 26 + 4 * admission;
+          m.h2RateLMin = 0.015 * admission;
+          if (app.auto && admission >= 1) {
+            setPhase("PRIME_FLOW_CHECK", "Measured water accepted; KOH dissolution and internal-loop prime started.");
+          }
+        }
+
+        if (app.phase === "PRIME_FLOW_CHECK") {
+          const prime = clamp(app.phaseElapsedS / CONFIG.primeDurationS, 0, 1);
+          m.waterAdmittedL = app.fill.measuredL;
+          m.electrolyteM = approach(m.electrolyteM, CONFIG.targetElectrolyteM * 1.8 / Math.max(1.8, app.fill.measuredL), simDtS / 24);
+          m.stackVoltageV = 82 + 14 * prime;
+          m.tempC = approach(m.tempC, 34, simDtS / 70);
+          m.h2RateLMin = approach(m.h2RateLMin, 0.035, simDtS / 35);
+          if (app.auto && prime >= 1) {
+            setPhase("ACTIVE_POWER", "Prime, airflow, gas path, thermal readiness and pre-charge accepted.");
+          }
+        }
+
+        if (app.phase === "ACTIVE_POWER") {
+          const ramp = clamp(app.phaseElapsedS / 35, 0, 1);
+          const chemicalProgress = clamp(m.energyKWh / CONFIG.targetEnergyKWh, 0, 1);
+          m.electrolyteM = approach(m.electrolyteM, CONFIG.targetElectrolyteM * 1.8 / Math.max(1.8, app.fill.measuredL), simDtS / 60);
+          m.waterAdmittedL = app.fill.measuredL;
+          superviseIsolation();
+          m.powerKW = requestedPower * ramp;
+          m.stackPowerKW = m.powerKW / CONFIG.dcEfficiency;
+          m.stackVoltageV = clamp(CONFIG.nominalStackVoltageV - Math.max(0, requestedPower - CONFIG.nominalPowerKW) * 1.5 - chemicalProgress * 2.0, CONFIG.stackVoltageMinV, CONFIG.stackVoltageMaxV);
+          m.stackCurrentA = m.stackPowerKW * 1000 / Math.max(1, m.stackVoltageV);
+          m.tempC = approach(m.tempC, 48 + (requestedPower - CONFIG.nominalPowerKW) * 4.5, simDtS / 330);
+          m.h2RateLMin = clamp(0.20 + Math.max(0, requestedPower - 10) * 0.055 + Math.max(0, m.tempC - 48) * 0.018, 0, 0.72);
+          m.energyKWh += m.powerKW * simDtS / 3600;
+          m.cumulativeH2L += m.h2RateLMin * simDtS / 60;
+          if (m.tempC >= CONFIG.shutdownTempC) startPurge("Chemical shutdown threshold reached; power isolated before purge.", true);
+          else if (m.tempC >= CONFIG.derateTempC || m.energyKWh >= CONFIG.controlledDerateStartKWh) {
+            setPhase("DERATED", m.tempC >= CONFIG.derateTempC ? "Core temperature crossed the provisional 55 °C derating threshold." : "End-of-event margin initiated a controlled derate.");
+          }
+        }
+
+        if (app.phase === "DERATED") {
+          superviseIsolation();
+          if (app.phase !== "DERATED") return;
+          const faulted = Boolean(app.fault);
+          const targetPower = faulted ? Math.min(6.5, requestedPower) : Math.min(8.0, requestedPower);
+          m.powerKW = approach(m.powerKW, targetPower, simDtS / 55);
+          m.stackPowerKW = m.powerKW / 0.90;
+          m.stackVoltageV = approach(m.stackVoltageV || 94, faulted ? 86 : 92, simDtS / 85);
+          m.stackCurrentA = m.stackPowerKW * 1000 / Math.max(1, m.stackVoltageV);
+          m.tempC = approach(m.tempC, faulted ? 58.5 : 53.5, simDtS / 210);
+          m.h2RateLMin = approach(m.h2RateLMin, faulted ? 0.78 : 0.42, simDtS / 70);
+          m.energyKWh += m.powerKW * simDtS / 3600;
+          m.cumulativeH2L += m.h2RateLMin * simDtS / 60;
+          if (m.tempC >= CONFIG.shutdownTempC) startPurge("Chemical shutdown threshold reached during derated operation.", true);
+          else if (!faulted && m.energyKWh >= CONFIG.targetEnergyKWh) setPhase("RAMP_DOWN", "Three-kilowatt-hour event target reached; controlled current reduction started.");
+        }
+
+        if (app.phase === "RAMP_DOWN") {
+          const fraction = clamp(1 - app.phaseElapsedS / CONFIG.rampDownDurationS, 0, 1);
+          m.powerKW = Math.min(m.powerKW, CONFIG.nominalPowerKW * fraction);
+          m.stackPowerKW = m.powerKW / CONFIG.dcEfficiency;
+          m.stackVoltageV = approach(m.stackVoltageV, 90, simDtS / 40);
+          m.stackCurrentA = m.stackPowerKW * 1000 / Math.max(1, m.stackVoltageV);
+          m.tempC = approach(m.tempC, 49, simDtS / 120);
+          m.h2RateLMin = approach(m.h2RateLMin, 0.20, simDtS / 50);
+          if (app.phaseElapsedS >= CONFIG.rampDownDurationS) startPurge("Current reduced to zero; source and output contactors opened.", false);
+        }
+
+        if (app.phase === "PURGE_COOLDOWN") {
+          m.powerKW = approach(m.powerKW, 0, simDtS / 20);
+          m.stackPowerKW = approach(m.stackPowerKW, 0, simDtS / 20);
+          m.stackVoltageV = approach(m.stackVoltageV, 0, simDtS / 24);
+          m.stackCurrentA = approach(m.stackCurrentA, 0, simDtS / 20);
+          m.h2RateLMin = approach(m.h2RateLMin, 0.03, simDtS / 45);
+          m.tempC = approach(m.tempC, 34, simDtS / 145);
+          m.cumulativeH2L += m.h2RateLMin * simDtS / 60;
+          if (app.phaseElapsedS >= CONFIG.purgeDurationS) finishCartridge();
+        }
+
+        m.energyKWh = clamp(m.energyKWh, 0, CONFIG.targetEnergyKWh);
+        const chemicalProgress = clamp(m.energyKWh / CONFIG.targetEnergyKWh, 0, 1);
+        m.alRemainingKg = CONFIG.activeAlKg * (1 - CONFIG.aluminumUtilization * chemicalProgress);
+        m.productKg = CONFIG.productEquivalentKg * CONFIG.aluminumUtilization * chemicalProgress;
+        m.aluminateKg = 0.30 * Math.sin(Math.PI * chemicalProgress) + 0.06 * chemicalProgress;
+        m.sumpFillPct = CONFIG.productSumpDesignFillPct * chemicalProgress;
+
+        if (app.active !== null) {
+          const cart = app.cartridges[app.active];
+          cart.energyKWh = m.energyKWh;
+          cart.productKg = m.productKg;
+          cart.waterL = m.waterAdmittedL;
+        }
+
+        if (app.missionElapsedS - app.lastSampleS >= 30) {
+          app.lastSampleS = app.missionElapsedS;
+          app.samples.push({ t: app.missionElapsedS, p: m.powerKW, temp: m.tempC, h2: m.h2RateLMin });
+          app.samples = app.samples.slice(-110);
+        }
+      }
+
+      function renderStateRail() {
+        const serviceRequired = app.phase === "SPENT" && !app.cartridges.some(cart => cart.state === "DRY_READY");
+        const currentIndex = app.phase === "FAULT_LOCKED" ? STATE_ORDER.length : STATE_ORDER.indexOf(app.phase);
+        const normalRail = STATE_ORDER.map((state, index) => {
+          const meta = STATE_META[state];
+          const className = app.phase === "FAULT_LOCKED" ? (index < STATE_ORDER.indexOf("PURGE_COOLDOWN") ? "complete" : "") : index < currentIndex ? "complete" : index === currentIndex ? "current" : "";
+          return `<div class="state-step ${className}" style="--state-color:${meta.color}"><span class="n">${index + 1}</span><span><span class="label">${meta.label}</span><span class="hint">${meta.hint}</span></span></div>`;
+        }).join("");
+        const faultCard = app.phase === "FAULT_LOCKED" ? `<div class="state-step current" style="--state-color:${STATE_META.FAULT_LOCKED.color}"><span class="n">!</span><span><span class="label">${STATE_META.FAULT_LOCKED.label}</span><span class="hint">${STATE_META.FAULT_LOCKED.hint}</span></span></div>` : "";
+        const serviceCard = serviceRequired ? `<div class="state-step current" style="--state-color:#c084fc"><span class="n">${STATE_ORDER.length + 1}</span><span><span class="label">Service required</span><span class="hint">all three cartridges spent</span></span></div>` : "";
+        el("stateRail").innerHTML = normalRail + faultCard + serviceCard;
+      }
+
+      function renderCartridges() {
+        el("cartridgeList").innerHTML = app.cartridges.map(cart => {
+          const active = app.active === cart.index && !["SPENT", "FAULT_LOCKED"].includes(cart.state);
+          const selected = app.selected === cart.index && app.active === null;
+          const spent = ["SPENT", "FAULT_LOCKED"].includes(cart.state);
+          const detail = spent ? `${cart.energyKWh.toFixed(2)} kWh · ${cart.productKg.toFixed(2)} kg retained${cart.state === "FAULT_LOCKED" ? " · fault lock" : ""}` : active ? `${app.metrics.waterAdmittedL.toFixed(1)} L admitted · integrated wet side isolated` : "404 g dry KOH sealed · event-ready";
+          return `<button class="cartridge-card ${active ? "active" : ""} ${selected ? "selected" : ""} ${spent ? "spent" : ""}" data-cartridge="${cart.index}" ${spent || app.active !== null ? "disabled" : ""}>
+            <span class="cartridge-icon">C${cart.index + 1}</span>
+            <span class="cartridge-copy"><strong>FDF-3 Cartridge ${cart.index + 1}</strong><span>${detail}</span></span>
+            <span class="cartridge-state" style="--state-color:${STATE_META[cart.state].color}">${STATE_META[cart.state].short}</span>
+          </button>`;
+        }).join("");
+
+        const readyCount = app.cartridges.filter(cart => cart.state === "DRY_READY").length;
+        el("remainingEvents").textContent = readyCount ? `${readyCount} EVENT${readyCount === 1 ? "" : "S"} READY` : "SERVICE_REQUIRED";
+      }
+
+      function renderCycle() {
+        const currentIndex = STATE_ORDER.indexOf(app.phase);
+        const icons = ["01", "LOCK", "FILL", "H₂O", "FLOW", "e⁻", "↓P", "RAMP", "VENT", "SVC"];
+        const copy = [
+          "Dry engineered Al, KOH charge, inhibitors and air cathodes remain isolated.",
+          "One cartridge is selected; two stay dry, electrically and hydraulically isolated.",
+          "Batch pouring into chamber 220; valve closed until 1.8 L is measured and confirmed.",
+          "Verified 1.8 L water dissolves the 404 g KOH dry charge.",
+          "Internal wet-loop prime, forced air, gas path, pressure and pre-charge are checked.",
+          "Al oxidation and O₂ reduction deliver 10 kW regulated CCS2 DC; 12 kW is thermal-limited Boost.",
+          "Recoverable constraints reduce the approved power reference; a critical fault follows the lock branch.",
+          "Current is reduced under control before source and output contactors open.",
+          "Dedicated vent clearing and cooldown continue with electrical output isolated.",
+          "Liquids and solids remain sealed for service; no return to DRY_READY."
+        ];
+        el("cycleGrid").innerHTML = STATE_ORDER.map((state, index) => {
+          const meta = STATE_META[state];
+          const className = index < currentIndex ? "complete" : index === currentIndex ? "current" : "";
+          return `<article class="cycle-stage ${className}" style="--state-color:${meta.color}"><div class="icon">${icons[index]}</div><h3>${meta.label}</h3><p>${copy[index]}</p></article>`;
+        }).join("") + (app.phase === "FAULT_LOCKED" ? `<article class="cycle-stage current" style="--state-color:${STATE_META.FAULT_LOCKED.color}"><div class="icon">LOCK</div><h3>Fault locked</h3><p>Critical wet-state fault: power isolation → purge/cooldown → service lock.</p></article>` : "");
+      }
+
+      function renderArchitecture() {
+        app.cartridges.forEach(cart => {
+          const group = el(`archCartridge${cart.index + 1}`);
+          const rect = group.querySelector("rect");
+          rect.classList.toggle("active-node", app.active === cart.index && !["SPENT", "FAULT_LOCKED"].includes(cart.state));
+          rect.classList.toggle("spent-node", ["SPENT", "FAULT_LOCKED"].includes(cart.state));
+        });
+
+        const routedIndex = app.active === null ? app.selected : app.active;
+        const cartridgeY = [62, 172, 282][routedIndex];
+        el("waterFlow").setAttribute("d", `M150 55 H205 V${cartridgeY} H260`);
+        el("airFlow").setAttribute("d", `M150 168 H215 V${cartridgeY} H260`);
+        el("gasFlow").setAttribute("d", `M470 ${cartridgeY} H520 V68 H565`);
+        el("electricFlow1").setAttribute("d", `M470 ${cartridgeY} H530 V173 H565`);
+        el("controlFlow1").setAttribute("d", `M150 281 H205 V${cartridgeY} H260`);
+
+        const activity = {
+          water: app.phase === "WATER_ADMISSION" || app.phase === "PRIME_FLOW_CHECK",
+          air: ["PRIME_FLOW_CHECK", "ACTIVE_POWER", "DERATED", "RAMP_DOWN", "PURGE_COOLDOWN"].includes(app.phase),
+          gas: ["ACTIVE_POWER", "DERATED", "RAMP_DOWN", "PURGE_COOLDOWN"].includes(app.phase),
+          electric: ["ACTIVE_POWER", "DERATED", "RAMP_DOWN"].includes(app.phase),
+          control: !["SPENT", "FAULT_LOCKED"].includes(app.phase)
+        };
+        document.querySelectorAll("[data-flow]").forEach(path => path.classList.toggle("active", Boolean(activity[path.dataset.flow])));
+      }
+
+      function renderMetrics() {
+        const m = app.metrics;
+        el("metricPower").textContent = `${m.powerKW.toFixed(2)} kW`;
+        el("metricEnergy").textContent = `${m.energyKWh.toFixed(2)} kWh`;
+        el("metricVoltage").textContent = `${m.stackVoltageV.toFixed(1)} V`;
+        el("metricCurrent").textContent = `${m.stackCurrentA.toFixed(0)} A`;
+        el("metricTemp").textContent = `${m.tempC.toFixed(1)} °C`;
+        el("metricH2").textContent = `${Math.round(clamp(m.h2RateLMin, 0, 1) * 100)}%`;
+        el("metricAl").textContent = `${m.alRemainingKg.toFixed(3)} kg`;
+        el("metricProduct").textContent = `${m.productKg.toFixed(2)} kg`;
+        el("meterPower").style.width = `${clamp(m.powerKW / CONFIG.boostPowerKW * 100, 0, 100)}%`;
+        el("meterEnergy").style.width = `${clamp(m.energyKWh / CONFIG.targetEnergyKWh * 100, 0, 100)}%`;
+        el("meterVoltage").style.width = `${clamp((m.stackVoltageV - CONFIG.stackVoltageMinV) / (CONFIG.stackVoltageMaxV - CONFIG.stackVoltageMinV) * 100, 0, 100)}%`;
+        el("meterCurrent").style.width = `${clamp(m.stackCurrentA / 145 * 100, 0, 100)}%`;
+        el("meterTemp").style.width = `${clamp((m.tempC - 20) / (CONFIG.shutdownTempC - 20) * 100, 0, 100)}%`;
+        el("meterH2").style.width = `${clamp(m.h2RateLMin * 100, 0, 100)}%`;
+        el("meterAl").style.width = `${clamp(m.alRemainingKg / CONFIG.activeAlKg * 100, 0, 100)}%`;
+        el("meterProduct").style.width = `${clamp(m.productKg / CONFIG.productEquivalentKg * 100, 0, 100)}%`;
+        el("missionProgress").style.width = `${clamp(m.energyKWh / CONFIG.targetEnergyKWh * 100, 0, 100)}%`;
+
+        const fillHeight = 52 * clamp(m.sumpFillPct / 100, 0, 1);
+        el("productFill").setAttribute("y", String(247 - fillHeight));
+        el("productFill").setAttribute("height", String(fillHeight));
+      }
+
+      function renderStatus() {
+        const meta = STATE_META[app.phase];
+        const serviceRequired = app.phase === "SPENT" && !app.cartridges.some(cart => cart.state === "DRY_READY");
+        const stateColor = app.fault ? STATE_META.DERATED.color : meta.color;
+        document.documentElement.style.setProperty("--state-color", stateColor);
+        el("headerState").textContent = serviceRequired ? "SERVICE_REQUIRED" : app.fault ? "DERATED · VENT RESTRICTION" : meta.short;
+        el("statusTitle").textContent = serviceRequired ? "Service required" : app.fault ? app.fault.label : meta.label;
+        el("statusReason").textContent = app.phase === "FILL_SESSION" ? `${meta.reason} ${fillVerdict().msg}` : serviceRequired ? "All three integrated cartridges are spent and sealed with their products retained. Replace the service cartridges before another rescue event." : app.fault ? "The controller limits current, raises the gas-path warning and keeps the dedicated external vent commanded open. Clear to recover, or inject again to demonstrate critical isolation → purge → FAULT_LOCKED." : meta.reason;
+        el("missionClock").textContent = `${formatClock(app.missionElapsedS)} · ${app.running ? `RUN ×${app.params.speed}` : "PAUSED"}`;
+        el("activeCartridgeLabel").textContent = serviceRequired ? "SYSTEM SERVICE REQUIRED" : app.active === null ? `CARTRIDGE ${app.selected + 1} SELECTED` : `CARTRIDGE ${app.active + 1} ACTIVE`;
+
+        const nextLabels = {
+          DRY_READY: "Select + begin checks",
+          SELECTED: "Open fill session",
+          FILL_SESSION: app.fill.measuredL + 1e-9 < app.params.waterL ? `Pour ${FILL_BATCH_L} L batch` : "Confirm activation (irreversible)",
+          WATER_ADMISSION: "Begin prime / flow check",
+          PRIME_FLOW_CHECK: "Pre-charge + active power",
+          ACTIVE_POWER: "Demonstrate derating",
+          DERATED: app.fault ? "Escalate to isolation + purge" : "Begin controlled ramp-down",
+          RAMP_DOWN: "Isolate + purge / cooldown",
+          PURGE_COOLDOWN: "Mark cartridge spent",
+          SPENT: app.cartridges.some(cart => cart.state === "DRY_READY") ? "Prepare next cartridge" : "Service required",
+          FAULT_LOCKED: "Service required"
+        };
+        el("advanceBtn").textContent = nextLabels[app.phase];
+        el("advanceBtn").disabled = app.phase === "FAULT_LOCKED" || (app.phase === "SPENT" && !app.cartridges.some(cart => cart.state === "DRY_READY"));
+        el("pauseBtn").textContent = app.running ? "Pause" : "Resume";
+        el("pauseBtn").disabled = ["DRY_READY", "SPENT", "FAULT_LOCKED"].includes(app.phase);
+        el("faultBtn").textContent = app.phase === "DERATED" && app.fault ? "Escalate vent fault" : "Inject vent fault";
+        el("faultBtn").disabled = app.phase !== "ACTIVE_POWER" && !(app.phase === "DERATED" && app.fault);
+        el("clearFaultBtn").disabled = app.phase !== "DERATED" || !app.fault;
+        el("autoBtn").textContent = app.auto ? "Auto mission running" : "Run auto mission";
+        el("autoBtn").disabled = app.auto || app.phase === "FAULT_LOCKED" || (app.phase === "SPENT" && !app.cartridges.some(cart => cart.state === "DRY_READY"));
+        el("powerInput").disabled = app.phase !== "DRY_READY";
+        el("waterInput").disabled = !["DRY_READY", "SELECTED", "FILL_SESSION"].includes(app.phase);
+        el("cancelFillBtn").disabled = !["SELECTED", "FILL_SESSION"].includes(app.phase);
+
+        const captions = {
+          DRY_READY: "DRY · SEALED · PASSIVE",
+          SELECTED: "ONE CARTRIDGE LOCKED · TWO REMAIN DRY",
+          FILL_SESSION: `${app.fill.measuredL.toFixed(1)} / 1.8 L IN CHAMBER 220 · VALVE CLOSED`,
+          WATER_ADMISSION: `${app.metrics.waterAdmittedL.toFixed(1)} / ${app.params.waterL.toFixed(1)} L WATER · KOH DISSOLUTION`,
+          PRIME_FLOW_CHECK: `${app.metrics.electrolyteM.toFixed(1)} M KOH · INTERNAL FLOW + AIR + GAS CHECK`,
+          ACTIVE_POWER: "Al-OXIDATION · O₂-REDUCTION · DC OUTPUT",
+          DERATED: app.fault ? "RECOVERABLE VENT FAULT · CURRENT LIMITED" : "CONTROLLED DERATE · THERMAL / END MARGIN",
+          RAMP_DOWN: "CONTROLLED CURRENT REDUCTION · CONTACTOR ISOLATION",
+          PURGE_COOLDOWN: "DC ISOLATED · GAS PURGE · PRODUCT SETTLING",
+          SPENT: "PRODUCTS RETAINED · CARTRIDGE SEALED",
+          FAULT_LOCKED: "WET CARTRIDGE ISOLATED · SERVICE LOCK"
+        };
+        el("cutawayCaption").textContent = captions[app.phase];
+      }
+
+      function renderSpecies() {
+        const currentIndex = app.phase === "FAULT_LOCKED" ? STATE_ORDER.length : STATE_ORDER.indexOf(app.phase);
+        document.querySelectorAll("[data-species-phase]").forEach(chip => {
+          const triggerIndex = STATE_ORDER.indexOf(chip.dataset.speciesPhase);
+          chip.classList.toggle("active", currentIndex >= triggerIndex && !["SPENT", "FAULT_LOCKED"].includes(app.phase));
+        });
+      }
+
+      function renderLog() {
+        el("eventLog").innerHTML = app.log.length ? app.log.map(item => `<div class="log-entry"><time>${item.time}</time><span>${item.message}</span></div>`).join("") : `<div class="log-entry"><time>00:00</time><span>Ready for a concept mission.</span></div>`;
+      }
+
+      function drawTrend() {
+        const canvas = el("trendCanvas");
+        const rect = canvas.getBoundingClientRect();
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const width = Math.max(300, Math.round(rect.width * dpr));
+        const height = Math.max(150, Math.round(rect.height * dpr));
+        if (canvas.width !== width || canvas.height !== height) { canvas.width = width; canvas.height = height; }
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, width, height);
+        const pad = { l: 38 * dpr, r: 12 * dpr, t: 12 * dpr, b: 25 * dpr };
+        const plotW = width - pad.l - pad.r;
+        const plotH = height - pad.t - pad.b;
+        ctx.strokeStyle = "rgba(130,170,195,0.13)";
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 4; i += 1) {
+          const y = pad.t + plotH * i / 4;
+          ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(width - pad.r, y); ctx.stroke();
+        }
+        ctx.fillStyle = "#78909e";
+        ctx.font = `${8 * dpr}px Cascadia Mono, monospace`;
+        ctx.fillText("0", 14 * dpr, height - pad.b + 3 * dpr);
+        ctx.fillText(formatClock(app.missionElapsedS), width - 48 * dpr, height - 7 * dpr);
+        if (app.samples.length < 2) return;
+
+        const tMin = app.samples[0].t;
+        const tMax = Math.max(tMin + 1, app.samples[app.samples.length - 1].t);
+        const series = [
+          { key: "p", color: "#facc15", max: 12.5 },
+          { key: "temp", color: "#f59e0b", min: 20, max: 65 },
+          { key: "h2", color: "#c084fc", max: 1.0 }
+        ];
+        series.forEach(s => {
+          ctx.strokeStyle = s.color;
+          ctx.lineWidth = 1.7 * dpr;
+          ctx.beginPath();
+          app.samples.forEach((sample, index) => {
+            const x = pad.l + (sample.t - tMin) / (tMax - tMin) * plotW;
+            const min = s.min || 0;
+            const y = pad.t + (1 - clamp((sample[s.key] - min) / (s.max - min), 0, 1)) * plotH;
+            if (index === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+          });
+          ctx.stroke();
+        });
+      }
+
+      function renderTwinLayers() {
+        const m = app.metrics;
+        const wet = ["WATER_ADMISSION", "PRIME_FLOW_CHECK", "ACTIVE_POWER", "DERATED", "RAMP_DOWN", "PURGE_COOLDOWN"].includes(app.phase);
+        const s = app.samples;
+        const slope = s.length >= 3 ? (s[s.length - 1].temp - s[s.length - 3].temp) / Math.max(1, (s[s.length - 1].t - s[s.length - 3].t) / 60) : 0;
+        const monitor = !wet ? "Cartridge dry — reaction-side channels idle." :
+          m.tempC >= CONFIG.shutdownTempC ? "CRITICAL: core at shutdown threshold." :
+          m.tempC >= CONFIG.derateTempC ? `WARNING: core ${m.tempC.toFixed(1)} °C ≥ 55 °C derating threshold.` :
+          m.tempC >= CONFIG.boostDisableTempC ? `Core ${m.tempC.toFixed(1)} °C: Boost disabled.` :
+          `All channels inside envelope (V ${m.stackVoltageV.toFixed(0)} V, I ${m.stackCurrentA.toFixed(0)} A, ${m.tempC.toFixed(1)} °C).`;
+        const diagnose = app.fault ? "Vent restriction: H₂ vent-load rising while current is limited — dedicated gas path suspected." :
+          slope > 1.2 && m.tempC > 49 ? `Temperature rising ${slope.toFixed(1)} °C/min above the setpoint at steady power — check blower 370 / tunnel 390.` :
+          app.imdWarned ? "IMD in warning band — insulation degradation trend to be serviced." : "No deviation between telemetry and the concept model.";
+        const remaining = Math.max(0, CONFIG.targetEnergyKWh - m.energyKWh);
+        const toGo = m.powerKW > 0.2 ? remaining / m.powerKW * 60 : null;
+        const toDerate = slope > 0.05 && m.tempC < CONFIG.derateTempC ? (CONFIG.derateTempC - m.tempC) / slope : null;
+        const prognose = wet ? `${remaining.toFixed(2)} kWh to go${toGo ? ` · ≈${toGo.toFixed(1)} min at ${m.powerKW.toFixed(1)} kW` : ""}${toDerate ? ` · derate in ≈${toDerate.toFixed(0)} min` : " · no derate expected"}.` : `${app.cartridges.filter(c => c.state === "DRY_READY").length} dry events available · 3 kWh each.`;
+        const prescribe = app.fault ? "Keep the vent open, limit current; escalate to isolation if the restriction persists." :
+          !wet ? (el("gateSummary").textContent === "ALL GATES PASSED" ? "Gates passed: proceed to the fill session." : "Resolve the blocking gate before selecting a cartridge.") :
+          m.tempC < CONFIG.boostDisableTempC && (toDerate === null || toDerate > 10) ? "Thermal margin available: 12 kW Boost may be permitted." : "Hold 10 kW nominal: thermal margin insufficient for Boost.";
+        el("twinLayers").innerHTML = [
+          ["1 · MONITORING", monitor, "var(--water)"], ["2 · DIAGNOSTICS", diagnose, "var(--warn)"],
+          ["3 · PROGNOSTICS", prognose, "var(--gas)"], ["4 · PRESCRIPTIVE", prescribe, "var(--safe)"]
+        ].map(([h, p, c]) => `<div class="layer" style="--layer-color:${c}"><h3>${h}</h3><p>${p}</p></div>`).join("") +
+          `<div class="layer" style="--layer-color:var(--muted)"><h3>VALIDATION</h3><p>Browser model calibrated to the Python reference plant (src/mpro/chemical_twin); uncertainty is quantified with an LHS + Gaussian-process emulator. Not test evidence.</p></div>`;
+      }
+
+      function render() {
+        renderGates();
+        renderTwinLayers();
+        renderStateRail();
+        renderCartridges();
+        renderCycle();
+        renderArchitecture();
+        renderMetrics();
+        renderStatus();
+        renderSpecies();
+        renderLog();
+        drawTrend();
+      }
+
+      function frame(nowMs) {
+        const realDtS = clamp((nowMs - app.lastFrameMs) / 1000, 0, 0.1);
+        app.lastFrameMs = nowMs;
+        updateSimulation(realDtS * app.params.speed);
+        updateSystemTwin(realDtS);
+        updateThreeTwin(realDtS);
+        if (nowMs - app.lastRenderMs >= 100) {
+          app.lastRenderMs = nowMs;
+          render();
+        }
+        requestAnimationFrame(frame);
+      }
+
+      function bindEvents() {
+        el("cartridgeList").addEventListener("click", event => {
+          const button = event.target.closest("[data-cartridge]");
+          if (!button || app.active !== null) return;
+          const index = Number(button.dataset.cartridge);
+          if (app.cartridges[index].state === "DRY_READY") { app.selected = index; addLog(`Cartridge ${index + 1} selected.`); render(); }
+        });
+
+        document.querySelectorAll(".view-tab").forEach(button => button.addEventListener("click", () => {
+          document.querySelectorAll(".view-tab").forEach(tab => { tab.classList.toggle("active", tab === button); tab.setAttribute("aria-selected", String(tab === button)); });
+          document.querySelectorAll(".view").forEach(view => view.classList.remove("active"));
+          el(`${button.dataset.view}View`).classList.add("active");
+          if (button.dataset.view === "twin3d" && threeTwin.ready) window.setTimeout(threeTwin.resize, 0);
+          if (button.dataset.view === "system3d" && systemTwin.ready) window.setTimeout(systemTwin.resize, 0);
+          updateExport3dButton();
+        }));
+
+        el("powerInput").addEventListener("input", event => { app.params.powerKW = Number(event.target.value); el("powerOutput").textContent = `${app.params.powerKW.toFixed(1)} kW`; });
+        el("waterInput").addEventListener("input", event => { app.params.waterL = Number(event.target.value); el("waterOutput").textContent = `${app.params.waterL.toFixed(1)} L`; });
+        el("speedInput").addEventListener("input", event => { app.params.speed = Number(event.target.value); el("speedOutput").textContent = `×${app.params.speed}`; });
+        el("advanceBtn").addEventListener("click", advancePhase);
+        el("autoBtn").addEventListener("click", () => {
+          app.auto = true;
+          app.running = true;
+          if (app.phase === "DRY_READY") activateSelected();
+          else if (app.phase === "SPENT") { prepareNextCartridge(); activateSelected(); }
+          addLog("Automatic mission progression enabled.");
+          render();
+        });
+        el("pauseBtn").addEventListener("click", () => { app.running = !app.running; addLog(app.running ? "Simulation resumed." : "Simulation paused."); render(); });
+        el("faultBtn").addEventListener("click", injectFault);
+        el("clearFaultBtn").addEventListener("click", clearFault);
+        el("cancelFillBtn").addEventListener("click", cancelFill);
+        ["envInput", "ventsClearInput", "cableInput", "ventInput", "diffuserInput", "hvilInput", "cpInput", "imdInput", "isoInput"].forEach(id => el(id).addEventListener("change", render));
+        el("resetBtn").addEventListener("click", resetDemo);
+        el("export3dBtn").addEventListener("click", exportActive3dPng);
+        window.addEventListener("resize", drawTrend);
+      }
+
+      bindEvents();
+      initSystemTwin();
+      initThreeTwin();
+      updateExport3dButton();
+      addLog("Configuration 2 baseline loaded: mission gates, fill session, IMD supervision; 3 integrated wet cartridges, one active at a time.");
+      render();
+      requestAnimationFrame(frame);
+    })();
+  </script>
+</body>
+</html>

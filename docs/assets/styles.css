@@ -1078,3 +1078,7 @@ footer { display: flex; justify-content: space-between; gap: 18px; padding: 20px
   .lcd-explanation { grid-template-columns: 1fr; }
   footer { flex-direction: column; }
 }
+
+/* Links from the software twin to the other twins */
+.view-tab.twin-link { min-width: 0; padding: 9px 11px; white-space: nowrap; text-decoration: none; color: var(--blue-700, #1769e0); border: 1px dashed #b9cde6; }
+.view-tab.twin-link:hover { color: var(--ink); }
