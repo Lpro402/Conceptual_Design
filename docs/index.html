@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0b2447">
   <meta name="description" content="Configuration 2 software twin of Metalyte PRO-MPRO: mission logic, LCD, architecture, diagnostics and service">
   <title>MPRO Software Twin</title>
-  <link rel="stylesheet" href="assets/styles.css?v=20260925-config2">
+  <link rel="stylesheet" href="assets/styles.css?v=20260926-hmi-twin">
 </head>
 <body>
   <div class="app-shell">
@@ -147,7 +147,7 @@
           <div class="lcd-hardware-layout">
           <div class="lcd-screen" id="lcd-screen">
             <header class="lcd-topbar">
-              <div class="lcd-brand"><span class="lcd-brand-icon">M</span><span><strong>METALYTE PRO</strong><small>MPRO CONTROL PANEL</small></span></div>
+              <div class="lcd-brand"><span class="lcd-brand-icon">M</span><span><strong>METALYTE PRO</strong><small>HMI TWIN · CONFIGURATION 2</small></span></div>
               <div class="lcd-clock"><strong id="lcd-clock">00:00</strong><small>LOCAL TIME</small></div>
               <div class="lcd-system-meta">
                 <span><small>CTRL</small><strong>ONLINE</strong></span>
@@ -166,8 +166,10 @@
                 <span class="lcd-label">01 / OPERATING STATE</span>
                 <strong id="lcd-state-title">READY</strong>
                 <p id="lcd-state-copy">System ready for a rescue event.</p>
+                <p id="lcd-operator-he" class="lcd-operator-he" dir="rtl" lang="he">מוכן - נותרו 3 אירועים</p>
+                <div class="lcd-fill" id="lcd-fill" hidden><span>WATER · CHAMBER 220 · VALVE CLOSED</span><strong id="lcd-fill-value">0.0 / 1.8 L</strong><div class="lcd-energy-track"><span id="lcd-fill-bar"></span></div></div>
                 <div class="lcd-step-track"><span id="lcd-progress-bar"></span></div>
-                <small id="lcd-progress-label">STEP 1 / 11</small>
+                <small id="lcd-progress-label">STEP 1 / 15</small>
                 <div class="lcd-interlock-block">
                   <span class="lcd-subheading">TRANSFER PERMISSIVES</span>
                   <div class="lcd-interlock-grid">
@@ -175,6 +177,8 @@
                     <span id="lcd-permissive-iso"><i></i>ISOLATION</span>
                     <span id="lcd-permissive-flow"><i></i>FLOW</span>
                     <span id="lcd-permissive-thermal"><i></i>THERMAL</span>
+                    <span id="lcd-permissive-vent"><i></i>VENT PATH</span>
+                    <span id="lcd-permissive-env"><i></i>OPEN AIR</span>
                   </div>
                 </div>
               </section>
@@ -478,6 +482,6 @@
   </div>
 
   <div class="toast-region" id="toast-region" aria-live="polite"></div>
-  <script src="assets/app.js?v=20260925-config2" defer></script>
+  <script src="assets/app.js?v=20260926-hmi-twin" defer></script>
 </body>
 </html>

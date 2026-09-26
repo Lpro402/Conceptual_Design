@@ -6,11 +6,11 @@
   <title>MPRO Digital Twins</title>
   <meta name="description" content="Entry point to the Metalyte PRO-MPRO Configuration 2 digital twins: software, chemical and integration.">
   <style>
-    :root { --bg:#f6f8fb; --card:#ffffff; --ink:#10233f; --muted:#5b6b80; --line:#dbe3ee; --accent:#1769e0; --chem:#0e9f6e; --int:#7c3aed; --ctl:#c2410c; }
+    :root { --bg:#f6f8fb; --card:#ffffff; --ink:#10233f; --muted:#5b6b80; --line:#dbe3ee; --accent:#1769e0; --chem:#0e9f6e; --int:#7c3aed; --ctl:#c2410c; --hmi:#0f766e; }
     @media (prefers-color-scheme: dark) {
-      :root:not([data-theme="light"]) { --bg:#0b1620; --card:#12212e; --ink:#e6eef6; --muted:#9eb2bf; --line:#20394a; --accent:#5aa2ff; --chem:#4ade80; --int:#c084fc; --ctl:#fb923c; }
+      :root:not([data-theme="light"]) { --bg:#0b1620; --card:#12212e; --ink:#e6eef6; --muted:#9eb2bf; --line:#20394a; --accent:#5aa2ff; --chem:#4ade80; --int:#c084fc; --ctl:#fb923c; --hmi:#2dd4bf; }
     }
-    :root[data-theme="dark"] { --bg:#0b1620; --card:#12212e; --ink:#e6eef6; --muted:#9eb2bf; --line:#20394a; --accent:#5aa2ff; --chem:#4ade80; --int:#c084fc; --ctl:#fb923c; }
+    :root[data-theme="dark"] { --bg:#0b1620; --card:#12212e; --ink:#e6eef6; --muted:#9eb2bf; --line:#20394a; --accent:#5aa2ff; --chem:#4ade80; --int:#c084fc; --ctl:#fb923c; --hmi:#2dd4bf; }
     * { box-sizing: border-box; }
     body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.55 "Segoe UI", system-ui, sans-serif; }
     main { max-width:1080px; margin:0 auto; padding:40px 16px 56px; }
@@ -46,6 +46,17 @@
         <li>LCD, architecture, diagnostics and service views</li>
       </ul>
       <a class="go" href="./">Open software twin</a>
+    </article>
+    <article class="card" style="--c:var(--hmi)">
+      <span class="tag">HMI SCREEN TWIN</span>
+      <h2>The physical operator display</h2>
+      <ul>
+        <li>Suitcase LCD driven by the software twin, state by state</li>
+        <li>Configuration 2 operator messages (Hebrew) from the HMI table</li>
+        <li>Water-fill gauge, transfer permissives incl. vent path and open air</li>
+        <li>Single primary action + persistent E-STOP</li>
+      </ul>
+      <a class="go" href="./?view=lcd">Open HMI screen twin</a>
     </article>
     <article class="card" style="--c:var(--chem)">
       <span class="tag">CHEMICAL TWIN</span>

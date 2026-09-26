@@ -14,6 +14,7 @@ same interfaces accept bench or field logs later.
 | Twin | Code | Web | Role |
 |---|---|---|---|
 | General / system twin | `src/mpro/baseline.json`, `src/mpro/baseline.py` | `docs/hub.html`, 3D system view in the chemical twin | One design baseline shared by every twin |
+| HMI screen twin | `src/mpro/software_twin/hmi.py` | `docs/?view=lcd` | Physical suitcase display; operator messages of the Configuration 2 HMI table |
 | Chemical twin | `src/mpro/chemical_twin/` | `docs/chemical-twin/` | Cartridge plant: electrochemistry, thermal, H₂, mass balance |
 | Software twin | `src/mpro/software_twin/` | `docs/` (HMI) | Configuration 2 mission logic + independent safety supervisor |
 | Control twin | `src/mpro/control_twin/` | `docs/control-twin/` | Power/current, LIC DC-link and thermal loops |

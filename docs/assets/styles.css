@@ -1082,3 +1082,10 @@ footer { display: flex; justify-content: space-between; gap: 18px; padding: 20px
 /* Links from the software twin to the other twins */
 .view-tab.twin-link { min-width: 0; padding: 9px 11px; white-space: nowrap; text-decoration: none; color: var(--blue-700, #1769e0); border: 1px dashed #b9cde6; }
 .view-tab.twin-link:hover { color: var(--ink); }
+
+/* HMI twin: Configuration 2 operator message and fill gauge on the physical screen */
+.lcd-operator-he { margin: -10px 0 14px; padding: 7px 9px; border-right: 3px solid var(--lcd-green, #36e29d); background: rgba(54, 226, 157, 0.06); color: #e8f4ff; font: 600 0.74rem/1.45 "Segoe UI", Arial, sans-serif; }
+.lcd-fill { margin: 0 0 14px; }
+.lcd-fill span { display: block; color: #6f91a8; font-size: 0.52rem; letter-spacing: 0.1em; }
+.lcd-fill strong { display: block; margin: 3px 0 5px; color: #7dd3fc; font-size: 0.9rem; }
+.lcd-fill[hidden] { display: none; }

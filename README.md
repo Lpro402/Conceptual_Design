@@ -16,6 +16,7 @@ an LIC buffer and an isolated DC/DC converter to a CCS2 vehicle inlet.
 |---|---|---|
 | All twins | **https://lpro402.github.io/Conceptual_Design/hub.html** | Entry point and how the twins connect |
 | Software twin | **https://lpro402.github.io/Conceptual_Design/** | 15-step Configuration 2 mission, LCD, architecture, diagnostics, service |
+| HMI screen twin | **https://lpro402.github.io/Conceptual_Design/?view=lcd** | The suitcase display: Configuration 2 operator messages (Hebrew), fill gauge, permissives, E-STOP |
 | Chemical twin | **https://lpro402.github.io/Conceptual_Design/chemical-twin/** | 3D system and cartridge, reactions, mission gates, fill session, twin layers |
 | Control twin | **https://lpro402.github.io/Conceptual_Design/control-twin/** | Power/current, LIC DC-link and thermal loops with live tuning |
 | Integration twin | **https://lpro402.github.io/Conceptual_Design/integration-twin/** | Integration levels L0–L3, threads T1–T7, gates, fault injection |
@@ -25,6 +26,8 @@ Presentation links kept from earlier versions:
 `?scenario=charging&view=architecture`.
 
 ![Software twin](docs/assets/metalyte_hmi_dashboard.png)
+
+![HMI screen twin](docs/assets/metalyte_lcd_display.png)
 
 ![Chemical twin](docs/assets/mpro_chemical_twin.png)
 

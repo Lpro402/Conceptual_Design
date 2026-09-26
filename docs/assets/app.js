@@ -82,6 +82,39 @@ const LCD_ACTIONS = {
   SERVICE_REQUIRED: "RESET DEMO", POWER_ISOLATION: "PURGE", FAULT_LOCKED: "RESET DEMO",
 };
 
+/* Operator messages on the physical screen: Configuration 2 HMI table.
+ * Must match MESSAGES in src/mpro/software_twin/hmi.py (tests enforce it). */
+const HMI_HE = {
+  SYSTEM_STANDBY: "מוכן - נותרו {remaining} אירועים",
+  SELF_TEST: "המערכת בודקת - המתן",
+  ENVIRONMENT_CHECK: "האם הרכב במקום סגור? אם כן, אין להפעיל. ליד קיר - הנח את המפזר בצד הפתוח.",
+  AWAIT_DEPLOY: "פרוס את הכבל ואת הוונט. הוצא את כל אזור המפזר המחורר מחוץ לרכב ואשר במסך.",
+  AWAIT_CONNECT: "חבר את המחבר לרכב",
+  EV_HANDSHAKE: "מתאם מול הרכב - המתן",
+  FILL_SESSION: "הוסף 1.8 ליטר מים. התקבלו {measured} מתוך 1.8 ליטר. אפשר לעצור את המזיגה ולהמשיך אחר כך.",
+  CONFIRM_ACTIVATION: "אישור: פעולה זו אינה הפיכה",
+  WATER_ADMISSION: "מפעיל מחסנית - המתן",
+  PRIME_FLOW_CHECK: "מכין מערכת - המתן",
+  PRECHARGE: "מתחבר לרכב - המתן",
+  ACTIVE_POWER: "מחזיר ניידות - {minutes} דקות משוערות",
+  DERATED: "ההספק הופחת להגנת המערכת - {minutes} דקות משוערות",
+  RAMP_DOWN: "מסיים בבטחה - אל תנתק",
+  PURGE_COOLDOWN: "מסיים בבטחה - אל תנתק",
+  SAFE_TO_DISCONNECT: "ניתן לנתק בבטחה",
+  SERVICE_REQUIRED: "נדרש שירות - שלוש מחסניות נוצלו",
+  POWER_ISOLATION: "תקלה - ההספק נותק, מבצע אוורור",
+  FAULT_LOCKED: "תקלה נעולה - נדרש שירות",
+};
+
+function operatorMessageHe() {
+  const s = runtime.sensors;
+  const minutes = s.power > 0.1 ? Math.ceil((BASELINE.eventKwh - runtime.energyKwh) / s.power * 60) : "--";
+  return HMI_HE[runtime.state]
+    .replace("{remaining}", remainingEvents())
+    .replace("{measured}", runtime.waterL.toFixed(1))
+    .replace("{minutes}", minutes);
+}
+
 const SRC = "https://github.com/Lpro402/Conceptual_Design/blob/main/src/mpro/software_twin/";
 const ARCHITECTURE_MODULES = {
   main: { code: "SW-CTRL-01", title: "Main System Controller", purpose: "Runs the Configuration 2 mission state machine and sets setpoints and permissions without owning the emergency decision.", responsibilities: ["Guarded mission-state transitions", "Operator blockers for correctable conditions", "Setpoints, permissions and operating limits"], inputs: "hmi_cmd | ev_status | reaction_status | power_status | fluid_status | safety_state", outputs: "mission_state | ev_cmd | reaction_cmd | power_cmd | fluid_cmd | log_event", safety: "The independent supervisor can override the controller and force safe outputs.", source: `${SRC}controller.py` },
@@ -449,6 +482,11 @@ function renderLCD() {
   byId("lcd-panel-status").parentElement.classList.toggle("is-fault", faulted);
   byId("lcd-state-title").textContent = state.title.toUpperCase();
   byId("lcd-state-copy").textContent = stateCopy();
+  byId("lcd-operator-he").textContent = operatorMessageHe();
+  const filling = ["FILL_SESSION", "CONFIRM_ACTIVATION"].includes(runtime.state);
+  byId("lcd-fill").hidden = !filling;
+  byId("lcd-fill-value").textContent = `${runtime.waterL.toFixed(1)} / 1.8 L${runtime.fillValid ? "" : " · RE-MEASURE"}`;
+  byId("lcd-fill-bar").style.width = `${Math.min(100, runtime.waterL / BASELINE.waterTargetL * 100)}%`;
   byId("lcd-progress-bar").style.width = `${missionProgress()}%`;
   byId("lcd-progress-label").textContent = faulted ? "INDEPENDENT SAFETY OVERRIDE" : i === null ? runtime.state : `STEP ${i + 1} / ${STATE_ORDER.length}`;
   byId("lcd-connection").classList.toggle("is-connected", Boolean(runtime.protocol));
@@ -457,6 +495,7 @@ function renderLCD() {
   const permissives = {
     "lcd-permissive-hvil": s.hvil, "lcd-permissive-iso": isolationLevel() !== "BLOCK",
     "lcd-permissive-flow": !live || s.flow >= 0.5, "lcd-permissive-thermal": s.temperature < BASELINE.shutdownC,
+    "lcd-permissive-vent": s.ventPathClear, "lcd-permissive-env": !(runtime.blocker || "").startsWith("Enclosed"),
   };
   Object.entries(permissives).forEach(([id, valid]) => {
     byId(id).classList.toggle("is-valid", valid);

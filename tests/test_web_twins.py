@@ -78,3 +78,14 @@ def test_pages_load_scripts_only_from_approved_sources() -> None:
     for page in (HMI, CHEM, INTEGRATION, HUB):
         for src in re.findall(r'<script[^>]+src="([^"]+)"', page):
             assert src.startswith(("assets/", "https://cdnjs.cloudflare.com/")), src
+
+
+def test_hmi_screen_twin_shows_the_configuration_2_operator_messages() -> None:
+    from mpro.software_twin.hmi import MESSAGES
+
+    body = re.search(r"const HMI_HE = \{(.*?)\};", APP, re.S).group(1)
+    web = dict(re.findall(r'(\w+): "([^"]+)"', body))
+    python = {state.name: text.replace("{measured:.1f}", "{measured}") for state, text in MESSAGES.items()}
+    assert web == python
+    for element_id in ("lcd-operator-he", "lcd-fill", "lcd-permissive-vent", "lcd-permissive-env"):
+        assert f'id="{element_id}"' in HMI
